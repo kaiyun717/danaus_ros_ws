@@ -1,0 +1,8 @@
+prefix=/home/oem/danaus_ros_ws/lab1/install
+
+Name: foo
+Description: Description of foo
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

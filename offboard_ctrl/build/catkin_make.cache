@@ -1,0 +1,2 @@
+vicon_bridge
+-DCATKIN_DEVEL_PREFIX=/home/oem/danaus_ros_ws/offboard_ctrl/devel -DCMAKE_INSTALL_PREFIX=/home/oem/danaus_ros_ws/offboard_ctrl/install -G Unix Makefiles
