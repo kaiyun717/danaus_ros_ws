@@ -515,6 +515,9 @@ private:
                   {
                     tf::transformStampedTFToMsg(transforms.back(), *pose_msg);
                     seg.pub.publish(pose_msg);
+                    // NOTE: Kai changed x and y coordinates!
+                    // This seems to temporarily fixed the `local_position_ned` in PX4 logs.
+                    // May have future implications and potential troubles. 
                     pose_p_msg->header = pose_msg->header;
                     pose_p_msg->pose.position.x = -(pose_msg->transform.translation.y);
                     pose_p_msg->pose.position.y = pose_msg->transform.translation.x;

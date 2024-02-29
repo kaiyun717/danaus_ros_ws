@@ -55,12 +55,14 @@ CMAKE_BINARY_DIR = /home/oem/danaus_ros_ws/offboard_ctrl/build
 # The main recursive "all" target.
 all: gtest/all
 all: vicon_bridge/all
+all: offboard_py/all
 
 .PHONY : all
 
 # The main recursive "preinstall" target.
 preinstall: gtest/preinstall
 preinstall: vicon_bridge/preinstall
+preinstall: offboard_py/preinstall
 
 .PHONY : preinstall
 
@@ -72,6 +74,7 @@ clean: CMakeFiles/tests.dir/clean
 clean: CMakeFiles/download_extra_data.dir/clean
 clean: gtest/clean
 clean: vicon_bridge/clean
+clean: offboard_py/clean
 
 .PHONY : clean
 
@@ -131,6 +134,48 @@ gtest/googletest/clean: gtest/googletest/CMakeFiles/gtest_main.dir/clean
 gtest/googletest/clean: gtest/googletest/CMakeFiles/gtest.dir/clean
 
 .PHONY : gtest/googletest/clean
+
+#=============================================================================
+# Directory level rules for directory offboard_py
+
+# Recursive "all" directory target.
+offboard_py/all:
+
+.PHONY : offboard_py/all
+
+# Recursive "preinstall" directory target.
+offboard_py/preinstall:
+
+.PHONY : offboard_py/preinstall
+
+# Recursive "clean" directory target.
+offboard_py/clean: offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/clean
+offboard_py/clean: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/clean
+
+.PHONY : offboard_py/clean
 
 #=============================================================================
 # Directory level rules for directory vicon_bridge
@@ -2641,6 +2686,681 @@ vicon_bridge_generate_messages: vicon_bridge/CMakeFiles/vicon_bridge_generate_me
 vicon_bridge/CMakeFiles/vicon_bridge_generate_messages.dir/clean:
 	$(MAKE) -f vicon_bridge/CMakeFiles/vicon_bridge_generate_messages.dir/build.make vicon_bridge/CMakeFiles/vicon_bridge_generate_messages.dir/clean
 .PHONY : vicon_bridge/CMakeFiles/vicon_bridge_generate_messages.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target mavros_msgs_generate_messages_eus"
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/rule
+
+# Convenience name for target.
+mavros_msgs_generate_messages_eus: offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/rule
+
+.PHONY : mavros_msgs_generate_messages_eus
+
+# clean rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/clean
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_eus.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target mavros_msgs_generate_messages_lisp"
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/rule
+
+# Convenience name for target.
+mavros_msgs_generate_messages_lisp: offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/rule
+
+.PHONY : mavros_msgs_generate_messages_lisp
+
+# clean rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/clean
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_lisp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target uuid_msgs_generate_messages_eus"
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/rule
+
+# Convenience name for target.
+uuid_msgs_generate_messages_eus: offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/rule
+
+.PHONY : uuid_msgs_generate_messages_eus
+
+# clean rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/clean
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_eus.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target mavros_msgs_generate_messages_py"
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/rule
+
+# Convenience name for target.
+mavros_msgs_generate_messages_py: offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/rule
+
+.PHONY : mavros_msgs_generate_messages_py
+
+# clean rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/clean
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_py.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target uuid_msgs_generate_messages_py"
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/rule
+
+# Convenience name for target.
+uuid_msgs_generate_messages_py: offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/rule
+
+.PHONY : uuid_msgs_generate_messages_py
+
+# clean rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/clean
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_py.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target uuid_msgs_generate_messages_nodejs"
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/rule
+
+# Convenience name for target.
+uuid_msgs_generate_messages_nodejs: offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/rule
+
+.PHONY : uuid_msgs_generate_messages_nodejs
+
+# clean rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/clean
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_nodejs.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target trajectory_msgs_generate_messages_lisp"
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/rule
+
+# Convenience name for target.
+trajectory_msgs_generate_messages_lisp: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/rule
+
+.PHONY : trajectory_msgs_generate_messages_lisp
+
+# clean rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/clean
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_lisp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target uuid_msgs_generate_messages_lisp"
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/rule
+
+# Convenience name for target.
+uuid_msgs_generate_messages_lisp: offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/rule
+
+.PHONY : uuid_msgs_generate_messages_lisp
+
+# clean rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/clean
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_lisp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target geographic_msgs_generate_messages_nodejs"
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/rule
+
+# Convenience name for target.
+geographic_msgs_generate_messages_nodejs: offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/rule
+
+.PHONY : geographic_msgs_generate_messages_nodejs
+
+# clean rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/clean
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_nodejs.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target geographic_msgs_generate_messages_lisp"
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/rule
+
+# Convenience name for target.
+geographic_msgs_generate_messages_lisp: offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/rule
+
+.PHONY : geographic_msgs_generate_messages_lisp
+
+# clean rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/clean
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_lisp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target geographic_msgs_generate_messages_eus"
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/rule
+
+# Convenience name for target.
+geographic_msgs_generate_messages_eus: offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/rule
+
+.PHONY : geographic_msgs_generate_messages_eus
+
+# clean rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/clean
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_eus.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target uuid_msgs_generate_messages_cpp"
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/rule
+
+# Convenience name for target.
+uuid_msgs_generate_messages_cpp: offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/rule
+
+.PHONY : uuid_msgs_generate_messages_cpp
+
+# clean rule for target.
+offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/clean
+.PHONY : offboard_py/CMakeFiles/uuid_msgs_generate_messages_cpp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target geographic_msgs_generate_messages_py"
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/rule
+
+# Convenience name for target.
+geographic_msgs_generate_messages_py: offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/rule
+
+.PHONY : geographic_msgs_generate_messages_py
+
+# clean rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/clean
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_py.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target geographic_msgs_generate_messages_cpp"
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/rule
+
+# Convenience name for target.
+geographic_msgs_generate_messages_cpp: offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/rule
+
+.PHONY : geographic_msgs_generate_messages_cpp
+
+# clean rule for target.
+offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/clean
+.PHONY : offboard_py/CMakeFiles/geographic_msgs_generate_messages_cpp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target mavros_msgs_generate_messages_nodejs"
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/rule
+
+# Convenience name for target.
+mavros_msgs_generate_messages_nodejs: offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/rule
+
+.PHONY : mavros_msgs_generate_messages_nodejs
+
+# clean rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/clean
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_nodejs.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target nav_msgs_generate_messages_nodejs"
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_nodejs: offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/rule
+
+.PHONY : nav_msgs_generate_messages_nodejs
+
+# clean rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/clean
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_nodejs.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target nav_msgs_generate_messages_cpp"
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_cpp: offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/rule
+
+.PHONY : nav_msgs_generate_messages_cpp
+
+# clean rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/clean
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_cpp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target nav_msgs_generate_messages_lisp"
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_lisp: offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/rule
+
+.PHONY : nav_msgs_generate_messages_lisp
+
+# clean rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/clean
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_lisp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target nav_msgs_generate_messages_eus"
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_eus: offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/rule
+
+.PHONY : nav_msgs_generate_messages_eus
+
+# clean rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/clean
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_eus.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target nav_msgs_generate_messages_py"
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/rule
+
+# Convenience name for target.
+nav_msgs_generate_messages_py: offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/rule
+
+.PHONY : nav_msgs_generate_messages_py
+
+# clean rule for target.
+offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/clean
+.PHONY : offboard_py/CMakeFiles/nav_msgs_generate_messages_py.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target trajectory_msgs_generate_messages_py"
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/rule
+
+# Convenience name for target.
+trajectory_msgs_generate_messages_py: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/rule
+
+.PHONY : trajectory_msgs_generate_messages_py
+
+# clean rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/clean
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_py.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target trajectory_msgs_generate_messages_cpp"
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/rule
+
+# Convenience name for target.
+trajectory_msgs_generate_messages_cpp: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/rule
+
+.PHONY : trajectory_msgs_generate_messages_cpp
+
+# clean rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/clean
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_cpp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target mavros_msgs_generate_messages_cpp"
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/rule
+
+# Convenience name for target.
+mavros_msgs_generate_messages_cpp: offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/rule
+
+.PHONY : mavros_msgs_generate_messages_cpp
+
+# clean rule for target.
+offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/clean
+.PHONY : offboard_py/CMakeFiles/mavros_msgs_generate_messages_cpp.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target trajectory_msgs_generate_messages_nodejs"
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/rule
+
+# Convenience name for target.
+trajectory_msgs_generate_messages_nodejs: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/rule
+
+.PHONY : trajectory_msgs_generate_messages_nodejs
+
+# clean rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/clean
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_nodejs.dir/clean
+
+#=============================================================================
+# Target rules for target offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir
+
+# All Build rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/all:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/depend
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles --progress-num= "Built target trajectory_msgs_generate_messages_eus"
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/all
+
+# Build rule for subdir invocation for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/oem/danaus_ros_ws/offboard_ctrl/build/CMakeFiles 0
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/rule
+
+# Convenience name for target.
+trajectory_msgs_generate_messages_eus: offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/rule
+
+.PHONY : trajectory_msgs_generate_messages_eus
+
+# clean rule for target.
+offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/clean:
+	$(MAKE) -f offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/clean
+.PHONY : offboard_py/CMakeFiles/trajectory_msgs_generate_messages_eus.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

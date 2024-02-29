@@ -132,6 +132,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/oem/danaus_ros_ws/offboard_ctrl/build/gtest/cmake_install.cmake")
   include("/home/oem/danaus_ros_ws/offboard_ctrl/build/vicon_bridge/cmake_install.cmake")
+  include("/home/oem/danaus_ros_ws/offboard_ctrl/build/offboard_py/cmake_install.cmake")
 
 endif()
 

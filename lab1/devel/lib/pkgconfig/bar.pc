@@ -1,8 +1,0 @@
-prefix=/home/oem/danaus_ros_ws/lab1/devel
-
-Name: bar
-Description: Description of bar
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 
