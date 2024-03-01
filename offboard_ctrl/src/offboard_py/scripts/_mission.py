@@ -124,7 +124,7 @@ def switch_modes(current_mode, next_mode, delay): # current_mode: int, next_mode
 def takeoff_waypoint_land(waypoints, takeoff_point, land_point, readyBit):
 	switch_modes(0, "stabilize", 5)
 	armingCall()
-	switch_modes(0, "guided", 5)
+	switch_modes(0, "offboard", 5)
 	takeoff_call(takeoff_point[0], takeoff_point[1], 10)
 	pushingWaypoints(waypoints) # Pushes waypoints to UAV
 	switch_modes(0, "auto", 5)
@@ -145,23 +145,23 @@ def main():
 	clear_pull()
 
 	waypoints = [	# Sending waypoints_push
-		Waypoint(frame = 3, command = 16, is_current = 1, autocontinue = True, param1 = 5, x_lat = 37.1977394, y_long = -80.5794510, z_alt = 10),
-		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1977394, y_long = -80.5794510, z_alt = 10),
-		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1976407, y_long = -80.5795481, z_alt = 10),
-		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1975393, y_long = -80.5796954, z_alt = 10)
+		Waypoint(frame = 3, command = 16, is_current = 1, autocontinue = True, param1 = 5, x_lat = 1, y_long = -1, z_alt = 1),
+		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 1, y_long = -1, z_alt = 1),
+		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 1, y_long = -1, z_alt = 1),
+		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 1, y_long = -1, z_alt = 1)
 	]
-	takeoff = [37.1977394,-80.5794510]
-	land = [37.1975393,-80.5796954]
+	takeoff = [1,-1]
+	land = [1,-1]
 	takeoff_waypoint_land(waypoints, takeoff, land, readyBit)
 
-	waypoints = [
-		Waypoint(frame = 3, command = 16, is_current = 1, autocontinue = True, param1 = 5, x_lat = 37.1973420, y_long = -80.5798929, z_alt = 10),
-		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1973420, y_long = -80.5798929, z_alt = 10),
-		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1972726, y_long = -80.5799733, z_alt = 10),
-		Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1971499, y_long = -80.5801173, z_alt = 10)
-	]
-	takeoff = [37.1973420,-80.5798929]
-	land = [37.1971499,-80.5801173]
+	# waypoints = [
+	# 	Waypoint(frame = 3, command = 16, is_current = 1, autocontinue = True, param1 = 5, x_lat = 37.1973420, y_long = -80.5798929, z_alt = 10),
+	# 	Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1973420, y_long = -80.5798929, z_alt = 10),
+	# 	Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1972726, y_long = -80.5799733, z_alt = 10),
+	# 	Waypoint(frame = 3, command = 16, is_current = 0, autocontinue = True, param1 = 5, x_lat = 37.1971499, y_long = -80.5801173, z_alt = 10)
+	# ]
+	# takeoff = [37.1973420,-80.5798929]
+	# land = [37.1971499,-80.5801173]
 	while True:
 		rospy.sleep(2)
 		print("Waiting for UAV to be close to next takeoff point")
@@ -170,7 +170,7 @@ def main():
 			takeoff_waypoint_land(waypoints, takeoff, land)
 			break
 
-	# DONE
+	# # DONE
 	print("EVERYTHING WORKED AS PLANNED!!!")
 	rospy.spin()
 

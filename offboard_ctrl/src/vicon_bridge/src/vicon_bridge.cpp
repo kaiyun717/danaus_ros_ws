@@ -519,8 +519,11 @@ private:
                     // This seems to temporarily fixed the `local_position_ned` in PX4 logs.
                     // May have future implications and potential troubles. 
                     pose_p_msg->header = pose_msg->header;
-                    pose_p_msg->pose.position.x = -(pose_msg->transform.translation.y);
-                    pose_p_msg->pose.position.y = pose_msg->transform.translation.x;
+                    pose_p_msg->header.frame_id = "map";
+                    // pose_p_msg->pose.position.x = -(pose_msg->transform.translation.y);
+                    // pose_p_msg->pose.position.y = pose_msg->transform.translation.x;
+                    pose_p_msg->pose.position.x = pose_msg->transform.translation.x;
+                    pose_p_msg->pose.position.y = pose_msg->transform.translation.y;
                     pose_p_msg->pose.position.z = pose_msg->transform.translation.z;
                     pose_p_msg->pose.orientation = pose_msg->transform.rotation;
                     seg.pub_pose.publish(pose_p_msg);

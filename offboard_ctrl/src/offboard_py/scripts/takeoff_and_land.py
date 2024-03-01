@@ -1,5 +1,5 @@
 """
- * File: offb_node.py
+ * File: takeoff_and_land.py
  * Stack and tested in Gazebo Classic 9 SITL
 """
 
@@ -18,7 +18,9 @@ def state_cb(msg):
 
 
 if __name__ == "__main__":
-    rospy.init_node("offboard_node_py")
+    print("Helllloooo Kai")
+
+    rospy.init_node("takeoff_and_land_node")
 
     state_sub = rospy.Subscriber("mavros/state", State, callback = state_cb)
 
@@ -38,18 +40,18 @@ if __name__ == "__main__":
     while(not rospy.is_shutdown() and not current_state.connected):
         rate.sleep()
 
-    pose = PoseStamped()
+    takeoff_pose = PoseStamped()
 
-    pose.pose.position.x = 0
-    pose.pose.position.y = 0
-    pose.pose.position.z = 2
+    takeoff_pose.pose.position.x = 0
+    takeoff_pose.pose.position.y = 0
+    takeoff_pose.pose.position.z = 0.5
 
     # Send a few setpoints before starting
     for i in range(100):
         if(rospy.is_shutdown()):
             break
 
-        local_pos_pub.publish(pose)
+        local_pos_pub.publish(takeoff_pose)
         rate.sleep()
 
     offb_set_mode = SetModeRequest()
@@ -68,11 +70,17 @@ if __name__ == "__main__":
             last_req = rospy.Time.now()
         else:
             if(not current_state.armed and (rospy.Time.now() - last_req) > rospy.Duration(5.0)):
-                if(arming_client.call(arm_cmd).success == True):
+                arming_resp = arming_client.call(arm_cmd)
+                if(arming_resp.success == True):
                     rospy.loginfo("Vehicle armed")
-
+                else:
+                    rospy.loginfo("Vehicle arming failed")
+                    rospy.loginfo(arming_resp)
                 last_req = rospy.Time.now()
 
-        local_pos_pub.publish(pose)
+        # local_pos_pub.publish(takeoff_pose)
+
+        # to disarm: arm_cmd.value = False and then push it to arming_client
+
 
         rate.sleep()
