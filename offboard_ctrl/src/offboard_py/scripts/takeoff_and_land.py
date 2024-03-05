@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     takeoff_pose.pose.position.x = 0
     takeoff_pose.pose.position.y = 0
-    takeoff_pose.pose.position.z = 0.5
+    takeoff_pose.pose.position.z = 1
 
     # Send a few setpoints before starting
     for i in range(100):
@@ -78,7 +78,7 @@ if __name__ == "__main__":
                     rospy.loginfo(arming_resp)
                 last_req = rospy.Time.now()
 
-        # local_pos_pub.publish(takeoff_pose)
+        local_pos_pub.publish(takeoff_pose)
 
         # to disarm: arm_cmd.value = False and then push it to arming_client
 

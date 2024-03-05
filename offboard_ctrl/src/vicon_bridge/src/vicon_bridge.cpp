@@ -526,6 +526,11 @@ private:
                     pose_p_msg->pose.position.y = pose_msg->transform.translation.y;
                     pose_p_msg->pose.position.z = pose_msg->transform.translation.z;
                     pose_p_msg->pose.orientation = pose_msg->transform.rotation;
+                    // pose_p_msg->pose.orientation.w = -pose_msg->transform.rotation.w;
+                    // pose_p_msg->pose.orientation.x = -pose_msg->transform.rotation.x;
+                    // pose_p_msg->pose.orientation.y = -pose_msg->transform.rotation.y;
+                    // pose_p_msg->pose.orientation.z = -pose_msg->transform.rotation.z;
+
                     seg.pub_pose.publish(pose_p_msg);
 
                   }
