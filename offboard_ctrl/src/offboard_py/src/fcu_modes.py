@@ -31,23 +31,23 @@ class FcuModes:
         except rospy.ServiceException as e:
             print("Service disarming call failed: %s" % e)
 
-    def set_takeoff(self, height=1):
-        rospy.wait_for_service('mavros/cmd/takeoff')
-        try:
-            takeoff_service = rospy.ServiceProxy('mavros/cmd/takeoff', CommandTOL)
-            takeoff_srv_msg = takeoff_service(altitude=height)
-            rospy.loginfo(takeoff_srv_msg)
-        except rospy.ServiceException as e:
-            print("Service takeoff call failed: %s" % e)
+    # def set_takeoff(self, height=1):
+    #     rospy.wait_for_service('mavros/cmd/takeoff')
+    #     try:
+    #         takeoff_service = rospy.ServiceProxy('mavros/cmd/takeoff', CommandTOL)
+    #         takeoff_srv_msg = takeoff_service(altitude=height)
+    #         rospy.loginfo(takeoff_srv_msg)
+    #     except rospy.ServiceException as e:
+    #         print("Service takeoff call failed: %s" % e)
 
-    def set_land(self):
-        rospy.wait_for_service('mavros/cmd/land')
-        try:
-            land_service = rospy.ServiceProxy('mavros/cmd/land', CommandTOL)
-            land_srv_msg = land_service()
-            rospy.loginfo(land_srv_msg)
-        except rospy.ServiceException as e:
-            print("Service land call failed: %s" % e)
+    # def set_land(self):
+    #     rospy.wait_for_service('mavros/cmd/land')
+    #     try:
+    #         land_service = rospy.ServiceProxy('mavros/cmd/land', CommandTOL)
+    #         land_srv_msg = land_service()
+    #         rospy.loginfo(land_srv_msg)
+    #     except rospy.ServiceException as e:
+    #         print("Service land call failed: %s" % e)
 
     def set_offboard_mode(self):
         rospy.wait_for_service('mavros/set_mode')
