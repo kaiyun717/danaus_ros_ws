@@ -1,40 +1,8 @@
 """
-TODO: 
-1. (Add a bias value to the attitude control input for roll and pitch.)
-1. Bump up the gains by ~10.
-2. (Let's not change the thrust for now. It's too tricky to do that right now.)
-3. Start after whenever angle is within a bound of vertical position.
-4. Velocity control instead of attitude control?
-5. Different baseline? Such as ETH.
-6. Control frequency higher than 20 Hz? Upto 50 Hz, like ETH.
-7. Pendulum angle needs to be about the bottom of the pendulum, 
-   not the center of drone.
-8. Cut the pendulum's length.
-9. Implement a joystick mount.
-10. Add a small weight on top of the pendulum.
-
-LIST:
-(A)
-3
-7
-1
-TEST
-
-(B)
-9
-3
-7
-8 (to 1.5m)
-6
-1
-TEST
-
-(C)
-4 or 5
-
-
- * File: takeoff_and_land.py
- * Stack and tested in Gazebo Classic 9 SITL
+Attitude control script for controlling the pendulum using the attitude setpoints.
+This employs a simple PD controller that tries to minimize the roll and pitch of the
+pendulum from the vertical line. The thrust is controlled by the velocity of the 
+pendulum in the z direction.
 """
 
 #! /usr/bin/env python
@@ -96,7 +64,6 @@ def pend_pos_cb(msg):
 def local_pos_cb(msg):
     global local_pos
     local_pos = msg
-
 
 def send_attitude_setpoint(pitch_degrees, duration):
     # attitude_pub = rospy.Publisher("mavros/setpoint_attitude/attitude", PoseStamped, queue_size=10)
@@ -185,7 +152,6 @@ if __name__ == "__main__":
 
     rospy.wait_for_service("/mavros/set_mode")
     set_mode_client = rospy.ServiceProxy("mavros/set_mode", SetMode)
-
 
     # Setpoint publishing MUST be faster than 2Hz
     rate = rospy.Rate(20)
