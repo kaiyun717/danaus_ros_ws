@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     takeoff_pose.pose.position.x = 0
     takeoff_pose.pose.position.y = 0
-    takeoff_pose.pose.position.z = 0.3
+    takeoff_pose.pose.position.z = 1.5
 
     # Send a few setpoints before starting
     for i in range(100):

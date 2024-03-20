@@ -64,7 +64,7 @@ class ConstantPositionTracker:
 
             if np.linalg.norm(K_new - K_old) < 1e-9:
                 print("Infinite horizon LQR converged at iteration ", i)
-                print("LQR Gain: \n", K_new)
+                # print("LQR Gain: \n", K_new)
                 return K_new
             else:
                 K_old = K_new
