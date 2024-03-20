@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
 
     # Setpoint publishing MUST be faster than 2Hz
-    rate = rospy.Rate(20)
+    rate = rospy.Rate(25)
 
     # Wait for Flight Controller connection
     while(not rospy.is_shutdown() and not current_state.connected):
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     takeoff_pose.pose.position.x = 0
     takeoff_pose.pose.position.y = 0
-    takeoff_pose.pose.position.z = 1
+    takeoff_pose.pose.position.z = 0.3
 
     # Send a few setpoints before starting
     for i in range(100):
