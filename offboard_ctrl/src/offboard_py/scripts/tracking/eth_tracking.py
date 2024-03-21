@@ -62,7 +62,7 @@ class ETHTrackingNode:
         self.pend_upright_tol = pend_upright_tol    # Tolerance for pendulum relative position [r,z] (norm in meters)
 
         ### Subscribers ###
-        self.quad_cb = VehicleStateCB()
+        self.quad_cb = VehicleStateCB(mode=self.mode)
         self.pend_cb = PendulumCB(mode=self.mode)
         ### Services ###
         self.quad_modes = FcuModes()
@@ -298,10 +298,11 @@ class ETHTrackingNode:
 
             # Publish the attitude setpoint
             self.att_setpoint.header.stamp = rospy.Time.now()
-            self.att_setpoint.body_rate.x = u[2]
+            self.att_setpoint.body_rate.x = u[0]
             self.att_setpoint.body_rate.y = u[1]
-            self.att_setpoint.body_rate.z = u[0]
-            self.att_setpoint.thrust = u[3] * self.mass
+            self.att_setpoint.body_rate.z = u[2]
+            # self.att_setpoint.thrust = (u[3] - 981) / 9.81
+            self.att_setpoint.thrust = (u[3]/(9.81)) * 0.45
 
             self.quad_att_setpoint_pub.publish(self.att_setpoint)
 
@@ -367,7 +368,7 @@ if __name__ == "__main__":
     print(input_log)
     
     curr_dir = os.getcwd()
-    # save_dir = os.path.abspath(os.path.join(curr_dir, "../../logs"))
+    save_dir = os.path.abspath(os.path.join(curr_dir, "../logs"))
     save_dir = curr_dir
-    np.save(os.path.join(save_dir, "state_log.npy"), state_log)
-    np.save(os.path.join(save_dir, "input_log.npy"), input_log)
+    np.save(os.path.join(save_dir, "state_log_2.npy"), state_log)
+    np.save(os.path.join(save_dir, "input_log_2.npy"), input_log)

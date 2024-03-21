@@ -7,15 +7,19 @@ from mavros_msgs.srv import *
 
 
 class VehicleStateCB:
-    def __init__(self) -> None:
+    def __init__(self, mode) -> None:
         self.state = State()
         self.state_sub = rospy.Subscriber('mavros/state', State, self.state_cb)
         
         self.pose = PoseStamped()
         self.pose_sub = rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.pose_cb)
-
+        
         self.velocity = TwistStamped()
-        self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity', TwistStamped, self.velocity_cb)
+        
+        if mode == "real":
+            self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity', TwistStamped, self.velocity_cb)
+        elif mode == "sim":
+            self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity_local', TwistStamped, self.velocity_cb)
 
     def state_cb(self, msg):
         self.state = msg
