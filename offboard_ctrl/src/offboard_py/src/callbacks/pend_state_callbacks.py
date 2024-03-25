@@ -84,3 +84,16 @@ class PendulumCB:
         s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt
         self.prev_pose = self.pose
         return np.array([r, s])
+    
+
+if __name__ == "__main__":
+    rospy.init_node('pendulum_state_cb', anonymous=True)
+    
+    pend_cb = PendulumCB("sim")
+    rate = rospy.Rate(2)
+
+    while not rospy.is_shutdown():
+        print("RZ Pose: ", pend_cb.get_rz_pose())
+        print("RZ Vel: ", pend_cb.get_rz_vel(0.5))
+        
+        rate.sleep()
