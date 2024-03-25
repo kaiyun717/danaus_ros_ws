@@ -48,7 +48,11 @@ class ConstantPositionTracker:
         self.Ad = exp_matrix[:self.nx, :self.nx]
         self.Bd = exp_matrix[:self.nx, self.nx:]
 
-        self.xgoal = (np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+        self.xgoal = (np.array([0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))   
+
+        # Goal: (1, 1, 1) --> # Pos Pitch (wy), Neg Roll (wx), Pos Thr --> No, No, Yes
+        # Goal: (-1, -1, -1) --> # Neg Pitch (wy), Pos Roll (wx), Neg Thr --> No, No, Yes
+
         self.xgoal = self.xgoal.reshape((self.nx, 1))
         self.ugoal = (np.array([0, 0, 0, self.g]))
         self.ugoal = self.ugoal.reshape((self.nu, 1))
