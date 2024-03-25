@@ -116,7 +116,7 @@ class ETHTrackingNode:
         start_time = rospy.Time.now()
 
         if self.mode == "sim":
-            _t = 25
+            _t = 30
         else:
             _t = 25
 
@@ -235,41 +235,40 @@ class ETHTrackingNode:
         error_log = np.zeros((self.nx, num_itr))
 
         ##### Takeoff Sequence #####
-        # self._takeoff_sequence()
+        self._takeoff_sequence()
         
         # ##### Pendulum Mounting #####
-        # if self.mode == "real":
-        #     # Sleep for 5 seconds so that pendulum can be mounted
-        #     rospy.loginfo("Sleeping for 5 seconds to mount the pendulum.")
-        #     rospy.sleep(5)
+        if self.mode == "real":
+            # Sleep for 5 seconds so that pendulum can be mounted
+            rospy.loginfo("Sleeping for 5 seconds to mount the pendulum.")
+            rospy.sleep(5)
 
-        #     # Keep the pendulum upright
-        #     rospy.loginfo("Keeping the pendulum upright.")
-        #     self._pend_upright_real(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
-        # elif self.mode == "sim":
-        #     rospy.loginfo("Swing the pendulum upright.")
-            # self._pend_upright_sim(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
+            # Keep the pendulum upright
+            rospy.loginfo("Keeping the pendulum upright.")
+            self._pend_upright_real(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
+        elif self.mode == "sim":
+            rospy.loginfo("Swing the pendulum upright.")
+            self._pend_upright_sim(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
         
-        # itr = 0
-        # while (not rospy.is_shutdown()) and (rospy.Time.now() - start_time) < rospy.Duration(duration):
 
         ##### Setting near origin & upright #####
-        # if self.mode == "sim":<PX4-Autopilot_clone>
-        #     rospy.loginfo("Setting near origin & upright")
-        #     for _ in range(150):
-        #         link_state = LinkState()
-        #         link_state.link_name = 'danaus12_pend::pendulum'
-        #         link_state.reference_frame = 'base_link'
-        #         _ = self.set_link_state_service(link_state)
-        #         self.quad_pose_pub.publish(self.takeoff_pose)
-        # else:
-        #     pass
+        if self.mode == "sim":
+            rospy.loginfo("Setting near origin & upright")
+            for _ in range(150):
+                link_state = LinkState()
+                link_state.link_name = 'danaus12_pend::pendulum'
+                link_state.reference_frame = 'base_link'
+                _ = self.set_link_state_service(link_state)
+                self.quad_pose_pub.publish(self.takeoff_pose)
+        else:
+            pass
         
         ##### Pendulum Position Control #####
         rospy.loginfo("Starting the constant position control!")
         start_time = rospy.Time.now()
 
-        for itr in range(int(1e10)):
+        # for itr in range(int(1e10)):  # If you want to test with console.
+        for itr in range(num_itr):
             if rospy.is_shutdown():
                 rospy.loginfo("Node shutdown detected. Exiting the control loop.")
                 break
@@ -282,16 +281,16 @@ class ETHTrackingNode:
             quad_zyx_ang = self.quad_cb.get_zyx_angles()
             # Pendulum RZ
             if self.mode == "sim":
-                # pend_rz = self.pend_cb.get_rz_pose()
-                pend_rz = np.zeros((2,))
-                pend_rz = pend_rz.T
+                pend_rz = self.pend_cb.get_rz_pose()
+                # pend_rz = np.zeros((2,))
+                # pend_rz = pend_rz.T
             else:
                 pend_rz = self.pend_cb.get_rz_pose(vehicle_pose=quad_xyz)
             # Pendulum RZ Velocity
             if self.mode == "sim":
-                # pend_rz_vel = self.pend_cb.get_rz_vel()
-                pend_rz_vel = np.zeros((2,))
-                pend_rz_vel = pend_rz_vel.T
+                pend_rz_vel = self.pend_cb.get_rz_vel()
+                # pend_rz_vel = np.zeros((2,))
+                # pend_rz_vel = pend_rz_vel.T
             else:
                 pend_rz_vel = self.pend_cb.get_rz_vel(self.dt)
 
@@ -334,9 +333,9 @@ class ETHTrackingNode:
             # self.quad_pose_pub.publish(self.takeoff_pose)
 
             # Log the state and input
-            # state_log[:, itr] = x.flatten()
-            # input_log[:, itr] = u.flatten()
-            # error_log[:, itr] = (x - self.xgoal).flatten()
+            state_log[:, itr] = x.flatten()
+            input_log[:, itr] = u.flatten()
+            error_log[:, itr] = (x - self.xgoal).flatten()
 
             self.rate.sleep()
 
@@ -375,8 +374,8 @@ if __name__ == "__main__":
     print("")
     
     L = 0.5
-    # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0])      # With pendulum
-    Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
+    Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0])      # With pendulum
+    # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
     R = 1.0 * np.diag([1, 1, 1, 10])
 
     eth_node = ETHTrackingNode(mode, hz, track_type, mass, L, Q, R, 
