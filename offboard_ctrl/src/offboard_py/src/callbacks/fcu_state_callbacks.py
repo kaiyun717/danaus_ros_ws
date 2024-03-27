@@ -79,5 +79,5 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         print("XYZ Pose: ", state_cb.get_xyz_pose())
-        print("Yaw, Pitch, Roll: ", state_cb.get_zyx_angles()*180/np.pi)
+        # print("Yaw, Pitch, Roll: ", state_cb.get_zyx_angles()*180/np.pi)
         

@@ -8,7 +8,7 @@ import scipy
 
 
 class ConstantPositionTracker:
-    def __init__(self, L, Q, R, dt) -> None:
+    def __init__(self, L, Q, R, xyz_goal, dt) -> None:
         self.L = L      # length from the base of the pendulum to the center of mass
         self.Q = Q      # State cost matrix
         self.R = R      # Input cost matrix
@@ -48,7 +48,7 @@ class ConstantPositionTracker:
         self.Ad = exp_matrix[:self.nx, :self.nx]
         self.Bd = exp_matrix[:self.nx, self.nx:]
 
-        self.xgoal = (np.array([0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))   
+        self.xgoal = (np.array([xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))   
 
         # Goal: (1, 1, 1) --> # Pos Pitch (wy), Neg Roll (wx), Pos Thr --> No, No, Yes
         # Goal: (-1, -1, -1) --> # Neg Pitch (wy), Pos Roll (wx), Neg Thr --> No, No, Yes
@@ -57,7 +57,7 @@ class ConstantPositionTracker:
         self.ugoal = (np.array([0, 0, 0, self.g]))
         self.ugoal = self.ugoal.reshape((self.nu, 1))
     
-    def infinite_horizon_LQR(self, num_itr=1000):
+    def infinite_horizon_LQR(self, num_itr=10000):
         P = np.copy(self.Q)
         K_old = np.linalg.inv(self.R + self.Bd.T @ P @ self.Bd) @ self.Bd.T @ P @ self.Ad
         P_old = self.Q + self.Ad.T @ P @ (self.Ad - self.Bd @ K_old)

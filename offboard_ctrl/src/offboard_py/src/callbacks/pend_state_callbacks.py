@@ -46,7 +46,7 @@ class PendulumCB:
 
     def get_rz_pose(self, vehicle_pose=None):
         if self.mode == 'sim':
-            return self._get_rz_pose_sim()
+            return self._get_rz_pose_sim(vehicle_pose)
         elif self.mode == 'real':
             return self._get_rz_pose_real(vehicle_pose)
         else:
@@ -59,10 +59,13 @@ class PendulumCB:
         s = self.pose.pose.position.y - vehicle_pose[1]
         return np.array([r, s])
     
-    def _get_rz_pose_sim(self):
-        response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')
-        r = response.link_state.pose.position.x
-        s = response.link_state.pose.position.y
+    def _get_rz_pose_sim(self, vehicle_pose):
+        # response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')    # Position changes with base_link frame
+        response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='')
+        r = response.link_state.pose.position.x - vehicle_pose[0] #(vehicle_pose[0] -0.001995)
+        s = response.link_state.pose.position.y - vehicle_pose[1] #(vehicle_pose[1] + 0.000135)
+        # r = vehicle_pose[0] - response.link_state.pose.position.x
+        # s = vehicle_pose[1] - response.link_state.pose.position.y
         return np.array([r, s])
     
     def get_rz_vel(self, dt=None):
@@ -74,7 +77,8 @@ class PendulumCB:
             raise ValueError('Invalid mode')
 
     def _get_rz_vel_sim(self):
-        response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')
+        # response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')    # Position changes with base_link frame
+        response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='')
         r = response.link_state.twist.linear.x
         s = response.link_state.twist.linear.y
         return np.array([r, s])
@@ -87,13 +91,17 @@ class PendulumCB:
     
 
 if __name__ == "__main__":
+    from src.callbacks.fcu_state_callbacks import VehicleStateCB
+
     rospy.init_node('pendulum_state_cb', anonymous=True)
     
     pend_cb = PendulumCB("sim")
+    quad_cb = VehicleStateCB("sim")
     rate = rospy.Rate(2)
 
     while not rospy.is_shutdown():
-        print("RZ Pose: ", pend_cb.get_rz_pose())
-        print("RZ Vel: ", pend_cb.get_rz_vel(0.5))
+        quad_pose = quad_cb.get_xyz_pose()
+        print("RZ Pose: ", pend_cb.get_rz_pose(vehicle_pose=quad_pose))
+        print("RZ Vel: ", pend_cb.get_rz_vel())
         
         rate.sleep()
