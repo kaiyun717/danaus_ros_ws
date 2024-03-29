@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     # Time
     time = np.arange(state_log.shape[1])  # Assuming time steps are along columns
-    time = time/50  # Assuming 50 Hz sampling rate
+    time = time/40  # Assuming 50 Hz sampling rate
     
     # Extract variables from state_log
     xyz = state_log[0:3, :]

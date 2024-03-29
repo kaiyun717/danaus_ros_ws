@@ -44,22 +44,22 @@ class PendulumCB:
 
         return r, s, dz, pitch_rad, roll_rad
 
-    def get_rz_pose(self, vehicle_pose=None):
+    def get_rs_pose(self, vehicle_pose=None):
         if self.mode == 'sim':
-            return self._get_rz_pose_sim(vehicle_pose)
+            return self._get_rs_pose_sim(vehicle_pose)
         elif self.mode == 'real':
-            return self._get_rz_pose_real(vehicle_pose)
+            return self._get_rs_pose_real(vehicle_pose)
         else:
             raise ValueError('Invalid mode')
     
-    def _get_rz_pose_real(self, vehicle_pose):
+    def _get_rs_pose_real(self, vehicle_pose):
         # r = self.pose.pose.position.x - vehicle_pose.pose.position.x
         # s = self.pose.pose.position.y - vehicle_pose.pose.position.y
         r = self.pose.pose.position.x - vehicle_pose[0]
         s = self.pose.pose.position.y - vehicle_pose[1]
         return np.array([r, s])
     
-    def _get_rz_pose_sim(self, vehicle_pose):
+    def _get_rs_pose_sim(self, vehicle_pose):
         # response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')    # Position changes with base_link frame
         response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='')
         r = response.link_state.pose.position.x - vehicle_pose[0] #(vehicle_pose[0] -0.001995)
@@ -68,22 +68,22 @@ class PendulumCB:
         # s = vehicle_pose[1] - response.link_state.pose.position.y
         return np.array([r, s])
     
-    def get_rz_vel(self, dt=None):
+    def get_rs_vel(self, vehicle_vel=None, dt=None):
         if self.mode == 'sim':
-            return self._get_rz_vel_sim()
+            return self._get_rs_vel_sim(vehicle_vel)
         elif self.mode == 'real':
-            return self._get_rz_vel_real(dt)
+            return self._get_rs_vel_real(dt)
         else:   
             raise ValueError('Invalid mode')
 
-    def _get_rz_vel_sim(self):
+    def _get_rs_vel_sim(self, vehicle_vel):
         # response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')    # Position changes with base_link frame
         response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='')
-        r = response.link_state.twist.linear.x
-        s = response.link_state.twist.linear.y
+        r = response.link_state.twist.linear.x - vehicle_vel[0]
+        s = response.link_state.twist.linear.y - vehicle_vel[1]
         return np.array([r, s])
 
-    def _get_rz_vel_real(self, dt):
+    def _get_rs_vel_real(self, dt):
         r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt
         s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt
         self.prev_pose = self.pose
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         quad_pose = quad_cb.get_xyz_pose()
-        print("RZ Pose: ", pend_cb.get_rz_pose(vehicle_pose=quad_pose))
-        print("RZ Vel: ", pend_cb.get_rz_vel())
+        print("RS Pose: ", pend_cb.get_rs_pose(vehicle_pose=quad_pose))
+        print("RS Vel: ", pend_cb.get_rs_vel())
         
         rate.sleep()
