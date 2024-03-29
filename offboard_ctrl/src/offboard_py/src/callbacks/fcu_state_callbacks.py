@@ -23,7 +23,7 @@ class VehicleStateCB:
             self.pose_sub = rospy.Subscriber('gazebo/model_states', ModelStates, self.pose_cb)
         
         if mode == "real":
-            self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity', TwistStamped, self.velocity_cb)
+            self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity_local', TwistStamped, self.velocity_cb)
         elif mode == "sim":
             self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity_local', TwistStamped, self.velocity_cb)
 
