@@ -4,7 +4,7 @@ import tf.transformations as tf
 
 
 from geometry_msgs.msg import PoseStamped, TwistStamped
-from mavros_msgs.msg import State
+from mavros_msgs.msg import State, AttitudeTarget
 from mavros_msgs.srv import *
 from gazebo_msgs.msg import ModelStates
 
@@ -26,6 +26,12 @@ class VehicleStateCB:
             self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity_local', TwistStamped, self.velocity_cb)
         elif mode == "sim":
             self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity_local', TwistStamped, self.velocity_cb)
+
+        self.targ_att_sub = rospy.Subscriber("/mavros/setpoint_raw/target_attitude", AttitudeTarget, self.targ_att_cb)
+
+    def targ_att_cb(self, data):
+        # Assuming the thrust is in the z component of the thrust vector
+        self.thrust = data.thrust
 
     def state_cb(self, msg):
         self.state = msg

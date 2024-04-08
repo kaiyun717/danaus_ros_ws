@@ -16,13 +16,14 @@ class PendulumCB:
             # self.pose_sub = rospy.Subscriber('pendulum/pose', PoseStamped, self.pose_cb)
             self.pose_sub = rospy.ServiceProxy('/gazebo/get_link_state', GetLinkState)
         elif mode == 'real':
-            self.pose_sub = rospy.Subscriber('vicon/pose/pendulum/pendulum', PoseStamped, self.pose_cb)
+            self.pose_sub = rospy.Subscriber('vicon/pose/pend/pend', PoseStamped, self.pose_cb)
         else:
             raise ValueError('Invalid mode')
 
         self.mode = mode
 
     def pose_cb(self, msg):
+        self.prev_pose = self.pose
         self.pose = msg
 
     def get_local_pose(self):
@@ -41,7 +42,6 @@ class PendulumCB:
 
         if abs(pitch_rad) > 20 / 180 * math.pi:
             pitch_rad = 20 / 180 * math.pi * pitch_rad / abs(pitch_rad)
-
         return r, s, dz, pitch_rad, roll_rad
 
     def get_rs_pose(self, vehicle_pose=None):
@@ -57,6 +57,7 @@ class PendulumCB:
         # s = self.pose.pose.position.y - vehicle_pose.pose.position.y
         r = self.pose.pose.position.x - vehicle_pose[0]
         s = self.pose.pose.position.y - vehicle_pose[1]
+        # rospy.loginfo(f"Position: r: {r}, s: {s}")
         return np.array([r, s])
     
     def _get_rs_pose_sim(self, vehicle_pose):
@@ -72,7 +73,7 @@ class PendulumCB:
         if self.mode == 'sim':
             return self._get_rs_vel_sim(vehicle_vel)
         elif self.mode == 'real':
-            return self._get_rs_vel_real(dt)
+            return self._get_rs_vel_real(vehicle_vel)
         else:   
             raise ValueError('Invalid mode')
 
@@ -83,10 +84,13 @@ class PendulumCB:
         s = response.link_state.twist.linear.y - vehicle_vel[1]
         return np.array([r, s])
 
-    def _get_rs_vel_real(self, dt):
-        r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt
-        s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt
-        self.prev_pose = self.pose
+    def _get_rs_vel_real(self, vehicle_vel):
+        current_time = self.pose.header.stamp.to_sec()
+        prev_time = self.prev_pose.header.stamp.to_sec()
+        dt = current_time - prev_time
+        r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt - vehicle_vel[0]
+        s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt - vehicle_vel[1]
+        # rospy.loginfo(f"Velocity: r: {r}, s: {s}")
         return np.array([r, s])
     
 
@@ -95,13 +99,14 @@ if __name__ == "__main__":
 
     rospy.init_node('pendulum_state_cb', anonymous=True)
     
-    pend_cb = PendulumCB("sim")
-    quad_cb = VehicleStateCB("sim")
+    pend_cb = PendulumCB("real")
+    quad_cb = VehicleStateCB("real")
     rate = rospy.Rate(2)
 
     while not rospy.is_shutdown():
         quad_pose = quad_cb.get_xyz_pose()
-        print("RS Pose: ", pend_cb.get_rs_pose(vehicle_pose=quad_pose))
-        print("RS Vel: ", pend_cb.get_rs_vel())
+        quad_vel = quad_cb.get_xyz_velocity()
+        pend_pose = pend_cb.get_rs_pose(quad_pose)
+        pend_vel = pend_cb.get_rs_vel(quad_vel)
         
         rate.sleep()
