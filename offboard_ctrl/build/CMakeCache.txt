@@ -525,6 +525,12 @@ mavros_DIR:PATH=/opt/ros/noetic/share/mavros/cmake
 //The directory containing a CMake configuration file for mavros_msgs.
 mavros_msgs_DIR:PATH=/opt/ros/noetic/share/mavros_msgs/cmake
 
+//Value Computed by CMake
+mavros_px4_BINARY_DIR:STATIC=/home/oem/danaus_ros_ws/offboard_ctrl/build/mavros_px4
+
+//Value Computed by CMake
+mavros_px4_SOURCE_DIR:STATIC=/home/oem/danaus_ros_ws/offboard_ctrl/src/mavros_px4
+
 //The directory containing a CMake configuration file for message_filters.
 message_filters_DIR:PATH=/opt/ros/noetic/share/message_filters/cmake
 
@@ -768,7 +774,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=6
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=7
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP

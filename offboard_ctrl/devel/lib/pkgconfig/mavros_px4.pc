@@ -1,0 +1,8 @@
+prefix=/home/oem/danaus_ros_ws/offboard_ctrl/devel
+
+Name: mavros_px4
+Description: Description of mavros_px4
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
