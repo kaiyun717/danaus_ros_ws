@@ -78,7 +78,7 @@ class ETHTrackingNode:
 
         ### Takeoff Controller ###
         Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-        R_takeoff = 1.0 * np.diag([50, 50, 50, 1])
+        R_takeoff = 1.0 * np.diag([2, 2, 2, 1])
         self.takeoff_cont = ConstantPositionTracker(self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
         self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
         self.takeoff_goal = self.takeoff_cont.xgoal

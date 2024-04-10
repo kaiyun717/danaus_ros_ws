@@ -3,7 +3,8 @@
 	<!-- example launch script for PX4 based FCU's -->
 
 	<!-- <arg name="fcu_url" default="udp://0.0.0.0:14550@192.168.4.1:14555" /> -->
-	<arg name="fcu_url" default="udp://0.0.0.0:14550@172.26.188.30:14555" />
+	<!-- <arg name="fcu_url" default="udp://0.0.0.0:14550@172.26.188.30:14555" /> -->
+	<arg name="fcu_url" default="udp://0.0.0.0:14550@192.168.3.112:14555" />
 	<!-- <arg name="fcu_url" default="/dev/ttyACM0:57600" /> -->
 	<arg name="gcs_url" default="" />
 	<arg name="tgt_system" default="1" />

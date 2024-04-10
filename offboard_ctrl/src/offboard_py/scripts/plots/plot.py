@@ -46,25 +46,25 @@ if __name__ == "__main__":
 
     # Time
     time = np.arange(state_log.shape[1])  # Assuming time steps are along columns
-    time = time/40  # Assuming 50 Hz sampling rate
+    time = time/90  # Assuming 50 Hz sampling rate
     
     # Extract variables from state_log
-    xyz = state_log[0:3, :]
-    xyz_dot = state_log[3:6, :]
-    abc = state_log[6:9, :]
-    rs = state_log[9:11, :]
-    rs_dot = state_log[11:13, :]
+    xyz = state_log[0:3, :500]
+    xyz_dot = state_log[3:6, :500]
+    abc = state_log[6:9, :500]
+    rs = state_log[9:11, :500]
+    rs_dot = state_log[11:13, :500]
 
     # Extract variables from error_log
-    e_xyz = error_log[0:3, :]
-    e_xyz_dot = error_log[3:6, :]
-    e_abc = error_log[6:9, :]
-    e_rs = error_log[9:11, :]
-    e_rs_dot = error_log[11:13, :]
+    e_xyz = error_log[0:3, :500]
+    e_xyz_dot = error_log[3:6, :500]
+    e_abc = error_log[6:9, :500]
+    e_rs = error_log[9:11, :500]
+    e_rs_dot = error_log[11:13, :500]
 
     # Extract variables from input_log
-    angular_velocities = input_log[0:3, :]
-    acceleration = input_log[3, :]
+    angular_velocities = input_log[0:3, :500]
+    acceleration = input_log[3, :500]
 
     #####################################
     ############ STATE PLOTS ############
@@ -75,9 +75,9 @@ if __name__ == "__main__":
 
     # Plot [x, y, z] vs time
     plt.subplot(3, 2, 1)
-    plt.plot(time, xyz[0, :], label='x')
-    plt.plot(time, xyz[1, :], label='y')
-    plt.plot(time, xyz[2, :], label='z')
+    plt.plot(time[: 500], xyz[0, :], label='x')
+    plt.plot(time[: 500], xyz[1, :], label='y')
+    plt.plot(time[: 500], xyz[2, :], label='z')
     plt.xlabel('Time')
     plt.ylabel('Position')
     plt.title('Quad Pos. vs Time')
@@ -85,9 +85,9 @@ if __name__ == "__main__":
 
     # Plot [x_dot, y_dot, z_dot] vs time
     plt.subplot(3, 2, 2)
-    plt.plot(time, xyz_dot[0, :], label='x_dot')
-    plt.plot(time, xyz_dot[1, :], label='y_dot')
-    plt.plot(time, xyz_dot[2, :], label='z_dot')
+    plt.plot(time[:500], xyz_dot[0, :], label='x_dot')
+    plt.plot(time[:500], xyz_dot[1, :], label='y_dot')
+    plt.plot(time[:500], xyz_dot[2, :], label='z_dot')
     plt.xlabel('Time')
     plt.ylabel('Velocity')
     plt.title('Quad Vel. vs Time')
@@ -95,9 +95,9 @@ if __name__ == "__main__":
 
     # Plot [α, β, γ] vs time
     plt.subplot(3, 2, 3)
-    plt.plot(time, abc[0, :], label='alpha')
-    plt.plot(time, abc[1, :], label='beta')
-    plt.plot(time, abc[2, :], label='gamma')
+    plt.plot(time[:500], abc[0, :], label='alpha')
+    plt.plot(time[:500], abc[1, :], label='beta')
+    plt.plot(time[:500], abc[2, :], label='gamma')
     plt.xlabel('Time')
     plt.ylabel('Orientation')
     plt.title('Quad Orient. vs Time')
@@ -105,8 +105,8 @@ if __name__ == "__main__":
 
     # Plot [r, s] vs time
     plt.subplot(3, 2, 4)
-    plt.plot(time, rs[0, :], label='r')
-    plt.plot(time, rs[1, :], label='s')
+    plt.plot(time[:500], rs[0, :], label='r')
+    plt.plot(time[:500], rs[1, :], label='s')
     plt.xlabel('Time')
     plt.ylabel('Position')
     plt.title('Pole Pos. vs Time')
@@ -114,8 +114,8 @@ if __name__ == "__main__":
 
     # Plot [r_dot, s_dot] vs time
     plt.subplot(3, 2, 5)
-    plt.plot(time, rs_dot[0, :], label='r_dot')
-    plt.plot(time, rs_dot[1, :], label='s_dot')
+    plt.plot(time[:500], rs_dot[0, :], label='r_dot')
+    plt.plot(time[:500], rs_dot[1, :], label='s_dot')
     plt.xlabel('Time')
     plt.ylabel('Velocities')
     plt.title('Pole Vel. vs Time')
@@ -137,9 +137,9 @@ if __name__ == "__main__":
 
     # Plot ERROR [x, y, z] vs time
     plt.subplot(3, 2, 1)
-    plt.plot(time, e_xyz[0, :], label='x_e')
-    plt.plot(time, e_xyz[1, :], label='y_e')
-    plt.plot(time, e_xyz[2, :], label='z_e')
+    plt.plot(time[:500], e_xyz[0, :], label='x_e')
+    plt.plot(time[:500], e_xyz[1, :], label='y_e')
+    plt.plot(time[:500], e_xyz[2, :], label='z_e')
     plt.xlabel('Time')
     plt.ylabel('Position')
     plt.title('Error Quad Pos. vs Time')
@@ -147,9 +147,9 @@ if __name__ == "__main__":
 
     # Plot ERROR [x_dot, y_dot, z_dot] vs time
     plt.subplot(3, 2, 2)
-    plt.plot(time, e_xyz_dot[0, :], label='x_dot_e')
-    plt.plot(time, e_xyz_dot[1, :], label='y_dot_e')
-    plt.plot(time, e_xyz_dot[2, :], label='z_dot_e')
+    plt.plot(time[:500], e_xyz_dot[0, :], label='x_dot_e')
+    plt.plot(time[:500], e_xyz_dot[1, :], label='y_dot_e')
+    plt.plot(time[:500], e_xyz_dot[2, :], label='z_dot_e')
     plt.xlabel('Time')
     plt.ylabel('Velocity')
     plt.title('Error Quad Vel. vs Time')
@@ -157,9 +157,9 @@ if __name__ == "__main__":
 
     # Plot ERROR [α, β, γ] vs time
     plt.subplot(3, 2, 3)
-    plt.plot(time, e_abc[0, :], label='alpha_e')
-    plt.plot(time, e_abc[1, :], label='beta_e')
-    plt.plot(time, e_abc[2, :], label='gamma_e')
+    plt.plot(time[:500], e_abc[0, :], label='alpha_e')
+    plt.plot(time[:500], e_abc[1, :], label='beta_e')
+    plt.plot(time[:500], e_abc[2, :], label='gamma_e')
     plt.xlabel('Time')
     plt.ylabel('Orientation')
     plt.title('Error Quad Orient. vs Time')
@@ -167,8 +167,8 @@ if __name__ == "__main__":
 
     # Plot ERROR [r, s] vs time
     plt.subplot(3, 2, 4)
-    plt.plot(time, e_rs[0, :], label='r_e')
-    plt.plot(time, e_rs[1, :], label='s_e')
+    plt.plot(time[:500], e_rs[0, :], label='r_e')
+    plt.plot(time[:500], e_rs[1, :], label='s_e')
     plt.xlabel('Time')
     plt.ylabel('Position')
     plt.title('Error Pole Pos. vs Time')
@@ -176,8 +176,8 @@ if __name__ == "__main__":
 
     # Plot ERROR [r_dot, s_dot] vs time
     plt.subplot(3, 2, 5)
-    plt.plot(time, e_rs_dot[0, :], label='r_dot_e')
-    plt.plot(time, e_rs_dot[1, :], label='s_dot_e')
+    plt.plot(time[:500], e_rs_dot[0, :], label='r_dot_e')
+    plt.plot(time[:500], e_rs_dot[1, :], label='s_dot_e')
     plt.xlabel('Time')
     plt.ylabel('Velocities')
     plt.title('Error Pole Vel. vs Time')
@@ -199,9 +199,9 @@ if __name__ == "__main__":
 
     # Plot [wx, wy, wz] vs time
     plt.subplot(2, 1, 1)
-    plt.plot(time, angular_velocities[0, :], label='wx')
-    plt.plot(time, angular_velocities[1, :], label='wy')
-    plt.plot(time, angular_velocities[2, :], label='wz')
+    plt.plot(time[:500], angular_velocities[0, :], label='wx')
+    plt.plot(time[:500], angular_velocities[1, :], label='wy')
+    plt.plot(time[:500], angular_velocities[2, :], label='wz')
     plt.xlabel('Time')
     plt.ylabel('Angular Rate')
     plt.title('Input Angular Rate vs Time')
@@ -209,7 +209,7 @@ if __name__ == "__main__":
 
     # Plot [a] vs time
     plt.subplot(2, 1, 2)
-    plt.plot(time, acceleration, label='a')
+    plt.plot(time[:500], acceleration, label='a')
     plt.xlabel('Time')
     plt.ylabel('Thrust')
     plt.title('Input Thrust vs Time')

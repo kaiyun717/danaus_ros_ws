@@ -78,7 +78,7 @@ class ETHTrackingNode:
 
         ### Takeoff Controller ###
         Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-        R_takeoff = 1.0 * np.diag([50, 50, 50, 1])
+        R_takeoff = 1.0 * np.diag([2, 2, 2, 1])
         self.takeoff_cont = ConstantPositionTracker(self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
         self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
         self.takeoff_goal = self.takeoff_cont.xgoal
@@ -156,7 +156,7 @@ class ETHTrackingNode:
         if self.mode == "sim":
             _t = 20
         else:
-            _t = 30
+            _t = 20
 
         while (not rospy.is_shutdown()) and (rospy.Time.now() - start_time) < rospy.Duration(_t):
             if (self.quad_cb.get_state().mode != "OFFBOARD") and (rospy.Time.now() - last_req) > rospy.Duration(5.0):
@@ -199,7 +199,7 @@ class ETHTrackingNode:
         
         rospy.loginfo("Takeoff pose achieved!")
 
-    def _pend_upright_real(self, req_time=0.5, tol=0.05):
+    def _pend_upright_real(self, req_time=1, tol=0.01):
         consecutive_time = rospy.Duration(0.0)
         start_time = rospy.Time.now()
 
@@ -213,7 +213,7 @@ class ETHTrackingNode:
             # Calculate the norm of the position
             position_norm = np.linalg.norm(pendulum_position)
 
-            # Check if the norm is less than 0.05m
+            # Check if the norm is less than  tol
             if position_norm < tol:
                 rospy.loginfo("Pendulum upright for {} seconds.".format(consecutive_time.to_sec()))
                 consecutive_time += rospy.Time.now() - start_time
@@ -237,7 +237,7 @@ class ETHTrackingNode:
         while not rospy.is_shutdown():
             # # Keep the quadrotor at this pose!
             # self.quad_pose_pub.publish(self.takeoff_pose)  
-            self._quad_lqr_controller(thrust_ratio=0.45)     # This is better than takeoff_pose
+            self._quad_lqr_controller(thrust_ratio=self.hover_thrust)     # This is better than takeoff_pose
             
             link_state = LinkState()
             link_state.pose.position.x = -0.001995
@@ -397,7 +397,7 @@ if __name__ == "__main__":
     parser.add_argument("--hz", type=int, default=50, help="Frequency of the control loop")
     parser.add_argument("--track_type", type=str, default="constant", help="Type of tracking to be used")
     # parser.add_argument("--mass", type=float, default=0.73578, help="Mass of the quadrotor + pendulum (in kg)")
-    parser.add_argument("--mass", type=float, default=0.700, help="Mass of the quadrotor + pendulum (in kg)")
+    parser.add_argument("--mass", type=float, default=0.740, help="Mass of the quadrotor + pendulum (in kg)")
     parser.add_argument("--takeoff_height", type=float, default=0.5, help="Height to takeoff to (in meters)")
     parser.add_argument("--pend_upright_time", type=float, default=0.5, help="Time to keep the pendulum upright")
     parser.add_argument("--pend_upright_tol", type=float, default=0.05, help="Tolerance for pendulum relative position [r,z] (norm in meters)")
@@ -421,9 +421,9 @@ if __name__ == "__main__":
     print("")
     
     L = 0.53            # x  y  z  x_dot y_dot z_dot yaw pitch roll r s r_dot s_dot
-    Q = 1.0 * np.diag([0.2, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])      # With pendulum
+    Q = 1.0 * np.diag([0, 0, 0.8, 3, 3, 0.0, 0.0, 0.0, 0.0, 4.0, 4.0, 0.4, 0.4])      # With pendulum
     # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-    R = 1.0 * np.diag([50, 50, 50, 1])
+    R = 1.0 * np.diag([20, 20, 20, 1])
 
     eth_node = ETHTrackingNode(mode, hz, track_type, mass, L, Q, R, 
                                takeoff_height=takeoff_height, 
