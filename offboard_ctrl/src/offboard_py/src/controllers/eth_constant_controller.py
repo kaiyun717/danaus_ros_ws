@@ -65,10 +65,12 @@ class ConstantPositionTracker:
         for i in range(num_itr):
             K_new = np.linalg.inv(self.R + self.Bd.T @ P_old @ self.Bd) @ self.Bd.T @ P_old @ self.Ad
             P_new = self.Q + self.Ad.T @ P_old @ (self.Ad - self.Bd @ K_new)
-
             if np.linalg.norm(K_new - K_old) < 1e-9:
                 print("Infinite horizon LQR converged at iteration ", i)
-                # print("LQR Gain: \n", K_new)
+                print("LQR Gain: \n", K_new)
+                print("Kx_wx: ", K_new[1, 0], " Kr_wx: ", K_new[1, -4])
+                print("Ky_wy: ", K_new[0, 1], " Ks_wy: ", K_new[0, -3])
+                print("Krd_wx: ", K_new[1, -2], " Ksd_wy: ", K_new[0, -1])
                 return K_new
             else:
                 K_old = K_new

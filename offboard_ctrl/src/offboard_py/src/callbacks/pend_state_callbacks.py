@@ -6,11 +6,15 @@ from geometry_msgs.msg import PoseStamped, TwistStamped
 from gazebo_msgs.srv import GetLinkState
 from mavros_msgs.msg import State
 from mavros_msgs.srv import *
+import collections
+
 
 class PendulumCB:
     def __init__(self, mode) -> None:
         self.pose = PoseStamped()
         self.prev_pose = PoseStamped()
+        self.avg_vel = np.array([0, 0])
+        self.w_avg = 0.5
 
         if mode == 'sim':
             # self.pose_sub = rospy.Subscriber('pendulum/pose', PoseStamped, self.pose_cb)
@@ -20,9 +24,15 @@ class PendulumCB:
         else:
             raise ValueError('Invalid mode')
 
+        # self.rs_vel_pub = rospy.Publisher('pendulum/rs_vel', TwistStamped, queue_size=10)
+        # self.rs_vel_avg_pub = rospy.Publisher('pendulum/rs_vel_avg', TwistStamped, queue_size=10)
+
         self.mode = mode
+        self.dq_len = 10
+        self.pose_deque = collections.deque(maxlen=self.dq_len)
 
     def pose_cb(self, msg):
+        # self.pose_deque.append(msg)
         self.prev_pose = self.pose
         self.pose = msg
 
@@ -57,6 +67,9 @@ class PendulumCB:
         # s = self.pose.pose.position.y - vehicle_pose.pose.position.y
         r = self.pose.pose.position.x - vehicle_pose[0]
         s = self.pose.pose.position.y - vehicle_pose[1]
+        if rospy.Time.now() - self.pose.header.stamp > rospy.Duration(0.2):
+            rospy.logwarn_throttle(1, "Pendulum pose is too old!")
+            return None
         # rospy.loginfo(f"Position: r: {r}, s: {s}")
         return np.array([r, s])
     
@@ -85,13 +98,36 @@ class PendulumCB:
         return np.array([r, s])
 
     def _get_rs_vel_real(self, vehicle_vel):
+        # if len(self.pose_deque) == self.dq_len:
+        #     self.prev_pose = self.pose_deque.popleft()
+        # else:
+        #     return np.array([0, 0])
         current_time = self.pose.header.stamp.to_sec()
         prev_time = self.prev_pose.header.stamp.to_sec()
         dt = current_time - prev_time
+        if dt < 1e-5:
+            print("Time difference is too small!")
+            return np.array([0, 0])
+        
         r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt - vehicle_vel[0]
         s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt - vehicle_vel[1]
+        self.avg_vel = (1 - self.w_avg)*np.array([r, s]) + self.w_avg*self.avg_vel
+        
+        # rs_vel_msg = TwistStamped()
+        # rs_vel_msg.twist.linear.x = r
+        # rs_vel_msg.twist.linear.y = s
+        # rs_vel_msg.header.stamp = rospy.Time.now()
+        # self.rs_vel_pub.publish(rs_vel_msg)
+
+        # rs_vel_avg_msg = TwistStamped()
+        # rs_vel_avg_msg.twist.linear.x = self.avg_vel[0]
+        # rs_vel_avg_msg.twist.linear.y = self.avg_vel[1]
+        # rs_vel_avg_msg.header.stamp = rospy.Time.now()
+        # self.rs_vel_avg_pub.publish(rs_vel_avg_msg)
+
         # rospy.loginfo(f"Velocity: r: {r}, s: {s}")
-        return np.array([r, s])
+        # rospy.loginfo(f"Avg.Vel.: r: {self.avg_vel[0]}, s: {self.avg_vel[1]}")
+        return self.avg_vel
     
 
 if __name__ == "__main__":
@@ -101,7 +137,7 @@ if __name__ == "__main__":
     
     pend_cb = PendulumCB("real")
     quad_cb = VehicleStateCB("real")
-    rate = rospy.Rate(2)
+    rate = rospy.Rate(100)
 
     while not rospy.is_shutdown():
         quad_pose = quad_cb.get_xyz_pose()

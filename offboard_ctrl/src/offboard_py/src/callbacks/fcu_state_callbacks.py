@@ -3,7 +3,7 @@ import numpy as np
 import tf.transformations as tf
 
 
-from geometry_msgs.msg import PoseStamped, TwistStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped, TransformStamped
 from mavros_msgs.msg import State, AttitudeTarget
 from mavros_msgs.srv import *
 from gazebo_msgs.msg import ModelStates
@@ -18,7 +18,8 @@ class VehicleStateCB:
         self.velocity = TwistStamped()
         
         if mode == "real":
-            self.pose_sub = rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.pose_cb)
+            # self.pose_sub = rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.pose_cb)
+            self.vicon_sub = rospy.Subscriber('vicon/danaus12/danaus12', TransformStamped, self.pose_cb)
         elif mode == "sim":
             self.pose_sub = rospy.Subscriber('gazebo/model_states', ModelStates, self.pose_cb)
         
@@ -43,7 +44,11 @@ class VehicleStateCB:
             self.velocity.twist = msg.twist[2]
             # print(type(msg.pose[2]))
         elif self.mode == "real":
-            self.pose = msg
+            # self.pose = msg
+            self.pose.pose.position.x = msg.transform.translation.x
+            self.pose.pose.position.y = msg.transform.translation.y
+            self.pose.pose.position.z = msg.transform.translation.z
+            self.pose.pose.orientation = msg.transform.rotation
 
     def velocity_cb(self, msg):
         if self.mode == "sim":
