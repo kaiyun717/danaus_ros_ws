@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # print(e_rs_norm) 
     
     # drop_idx = np.where(e_rs_norm > 0.3)
-    drop_idx = 20*90
+    drop_idx = 15*90
     
     # Extract variables from state_log
     xyz = state_log[0:3, :drop_idx]
