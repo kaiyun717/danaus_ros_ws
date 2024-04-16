@@ -109,8 +109,8 @@ class PendulumCB:
             print("Time difference is too small!")
             return np.array([0, 0])
         
-        r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt - vehicle_vel[0]
-        s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt - vehicle_vel[1]
+        r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt 
+        s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt 
         self.avg_vel = (1 - self.w_avg)*np.array([r, s]) + self.w_avg*self.avg_vel
         
         # rs_vel_msg = TwistStamped()
@@ -127,7 +127,7 @@ class PendulumCB:
 
         # rospy.loginfo(f"Velocity: r: {r}, s: {s}")
         # rospy.loginfo(f"Avg.Vel.: r: {self.avg_vel[0]}, s: {self.avg_vel[1]}")
-        return self.avg_vel
+        return self.avg_vel - vehicle_vel[:2].reshape((2,1))
     
 
 if __name__ == "__main__":
