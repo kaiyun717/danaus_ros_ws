@@ -48,7 +48,7 @@ class LowFidelitySim:
         self.dt = dt
         
         self.target_pose = np.array([0, 0, takeoff_height])
-        Q_nom = 1.0 * np.diag([1, 1, 1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+        Q_nom = 1.0 * np.diag([1, 1, 1, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 0.0, 0.0, 0.0, 0.0])
         R_nom = 1.0 * np.diag([50, 50, 50, 1])
         self.nom_cont = ConstantPositionTracker(self.L, Q_nom, R_nom, self.target_pose, self.dt)
         self.nom_K_inf = self.nom_cont.infinite_horizon_LQR(lqr_itr)
@@ -146,7 +146,7 @@ class LowFidelitySim:
         error_log = np.zeros((13, num_itr))
         
         # x = np.hstack((self.target_pose, np.array([0,0,0,0,0,0,0,0,0,0]))).reshape(13,1)
-        x = np.hstack((np.array([0., 0., self.takeoff_height]), np.array([0,0,0,0,0,0,0.05,-0.05,0,0]))).reshape(13,1)
+        x = np.hstack((np.array([0.1, 0.1, self.takeoff_height]), np.array([0,0,0,0,0,0,0.0,0.0,0,0]))).reshape(13,1)
         state_log[:, 0] = x.flatten()
         
         for itr in range(num_itr-1):
@@ -154,12 +154,17 @@ class LowFidelitySim:
             # if itr == 104:
             #     IPython.embed()
 
+            x[6] = self._convert_angle_to_negpi_pi_interval(x[6])
+            x[7] = self._convert_angle_to_negpi_pi_interval(x[7])
+            x[8] = self._convert_angle_to_negpi_pi_interval(x[8])
+
             u_nom = self.nom_input - self.nom_K_inf @ (x - self.nom_goal)
             
-            if np.abs(self.cbf_filter.cbf.phi_fn(x[6:].reshape(-1))) < 1e-2:
+            if np.abs(self.cbf_filter.cbf.phi_fn(x[6:].reshape(-1))) < 1e-1:
                 print("###################")
                 print("## Near boundary ##")
                 print("###################")
+                print("h(x) = ", self.cbf_filter.cbf.phi_fn(x[6:].reshape(-1)))
                 try:
                     u_safe = self.cbf_filter.solve_qp(x[6:].reshape(-1), np.roll(u_nom, 1))
                     u_safe = np.roll(u_safe, -1)
@@ -169,11 +174,12 @@ class LowFidelitySim:
             else:
                 u_safe = u_nom
 
-            # u_safe = self.cbf_filter.solve_qp(x[6:].reshape(-1), np.roll(u_nom, 1))
-            # u_safe = np.roll(u_safe, -1)
-            
             # IPython.embed()
             x = self.rk4(x, u_safe)
+
+            if np.isnan(x).any():
+                print("NAN in x")
+                return state_log[:,:itr], u_nom_log[:,:itr], u_safe_log[:,:itr], error_log[:,:itr]
             
             state_log[:, itr+1] = x.flatten()
             u_nom_log[:, itr] = u_nom.flatten()
@@ -189,18 +195,19 @@ class LowFidelitySim:
         return state_log, u_nom_log, u_safe_log, error_log
 
 
-
 if __name__ == "__main__":
     L_p = 0.69
 
     qp_weight = np.diag([50, 10, 10, 50]) * 10.0
     # qp_weight = np.diag([1, 10, 10, 10]) * 10.0
-    kappa = 10
-    n1 = 1
-    n2 = 2
-    k = 0.05
+    kappa = 8.7899304e3
+    # kappa = 1000
+    # n1 = 2.15029699
+    n1 = 3.76
+    n2 = 1.0
+    k = 0.01
 
-    delta_max = np.pi/6
+    delta_max = np.pi/4
     rs_max = 0.15
 
     u_max = np.array([2*g, 15, 15, 15]).reshape((4,1))
@@ -213,6 +220,31 @@ if __name__ == "__main__":
                              takeoff_height=1.5, 
                              lqr_itr=10000)
     
-    state_log, u_nom_log, u_safe_log, error_log = low_sim.run(10)
-    IPython.embed()
+    state_log, u_nom_log, u_safe_log, error_log = low_sim.run(15)
+
+    #################################
+    ######### Save the logs #########
+    #################################
+
+    # curr_dir = os.getcwd()
+    save_dir = "/home/oem/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/low_sim"
+
+    # Get current date and time
+    current_time = datetime.datetime.now()
+    # Format the date and time into the desired filename format
+    formatted_time = current_time.strftime("%m%d_%H%M%S-Sim")
+    directory_path = os.path.join(save_dir, formatted_time+"-og-kappa_{:.2f}_n1_{:.2f}_n2_{:.2f}_k_{:.2f}".format(kappa, n1, n2, k))
+    os.makedirs(directory_path, exist_ok=True)
+
+    np.save(os.path.join(directory_path, "state.npy"), state_log)
+    np.save(os.path.join(directory_path, "u_nom.npy"), u_nom_log)
+    np.save(os.path.join(directory_path, "u_safe.npy"), u_safe_log)
+    np.save(os.path.join(directory_path, "error.npy"), error_log)
+    np.save(os.path.join(directory_path, "gains.npy"), {"kappa": kappa, "n1": n1, "n2": n2, "k": k, "qp_weight": qp_weight, "u_max": u_max, "u_min": u_min, "delta_max": delta_max, "rs_max": rs_max, "L_p": L_p})
+
+    print("#####################################################")
+    print("################# LOG DATA SAVED ####################")
+    print("#####################################################")
+
+    
     

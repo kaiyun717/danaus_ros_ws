@@ -214,6 +214,9 @@ class CBFTrackingNode:
                 consecutive_time += rospy.Time.now() - start_time
                 if consecutive_time >= rospy.Duration(req_time):
                     rospy.loginfo("Pendulum position has been less than 0.05m for 0.5 seconds straight.")
+                    x = self._get_states()
+                    u = self._quad_lqr_controller(x) 
+                    self._send_attitude_setpoint(u)
                     
                     # Turn gravity on!
                     curr_pend_properties = get_link_properties_service(link_name='danaus12_pend::pendulum')
@@ -230,9 +233,9 @@ class CBFTrackingNode:
                                             izz=curr_pend_properties.izz
                                         )
                     set_link_properties_service(new_pend_properties)
-                    x = self._get_states()
-                    u = self._quad_lqr_controller(x) 
-                    self._send_attitude_setpoint(u)
+                    # x = self._get_states()
+                    # u = self._quad_lqr_controller(x) 
+                    # self._send_attitude_setpoint(u)
                     return True
             else:
                 consecutive_time = rospy.Duration(0.0)

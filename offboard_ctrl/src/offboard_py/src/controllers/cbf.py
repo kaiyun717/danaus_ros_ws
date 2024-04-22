@@ -1,5 +1,6 @@
 import IPython
 
+import math
 import torch
 import numpy as np
 
@@ -52,44 +53,149 @@ class CBF:
         signed_eps = -torch.sign(cos_cos)*eps
         delta = torch.acos(cos_cos + signed_eps)
 
+        # ######################################
+        # ############ INTERSECTION ############
+        # ######################################
         # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
         h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
         h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
 
-        h_complex = -1/self.kappa * torch.log(torch.exp(-self.kappa*h1) + torch.exp(-self.kappa*h2))
+        h_complex = -1/self.kappa * torch.log(torch.exp(-self.kappa*h1) + torch.exp(-self.kappa*h2)) + math.log(2)/self.kappa
 
-        # if h_complex.isinf():
-        #     h_complex = -torch.sign(h_complex) * torch.tensor([10])
+        ######################################
+        ############### UNION ################
+        ######################################
+        # # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
+        # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
+        # h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
+
+        # h_complex = 1/self.kappa * torch.log(torch.exp(self.kappa*h1) + torch.exp(self.kappa*h2)) - math.log(2)/self.kappa
 
         return h_complex
     
-    def phi_fn(self, x):
+    # def phi_fn(self, x):
+    #     """ Takes in numpy array x and returns the value of the CBF function in numpy """
+    #     x_torch = self._x_numpy_to_x_torch(x)
+    #     phi_torch = self.torch_phi(x_torch)
+    #     phi_numpy = phi_torch.detach().cpu().numpy()
+    #     return phi_numpy
+    
+    # def phi_grad(self, x):
+    #     """ Takes in numpy array x and returns the gradient of the CBF function in numpy """
+    #     # IPython.embed()
+    #     x_torch = self._x_numpy_to_x_torch(x)
+    #     x_torch.requires_grad = True
+    #     phi_torch = self.torch_phi(x_torch)
+    #     phi_grad = torch.autograd.grad(phi_torch, x_torch)[0]
+        
+    #     x_torch.requires_grad = False
+    #     phi_grad = phi_grad.detach().cpu().numpy()
+    #     return phi_grad
+
+    # def Lfh(self, x):
+    #     """ Takes in numpy array x and returns the value of Lfh in numpy """
+    #     L_f_h = self.phi_grad(x).dot(self.f(x))
+    #     return L_f_h
+
+    # def Lgh(self, x):
+    #     """ Takes in numpy array x and returns the value of Lfg in numpy """
+    #     L_g_h = self.phi_grad(x).dot(self.g(x))
+    #     return L_g_h
+
+    def h1_fn(self, x):
         """ Takes in numpy array x and returns the value of the CBF function in numpy """
-        x_torch = self._x_numpy_to_x_torch(x)
-        phi_torch = self.torch_phi(x_torch)
-        phi_numpy = phi_torch.detach().cpu().numpy()
-        return phi_numpy
+        L_p = self.L_p
+        alpha, beta, gamma, r, s, dr, ds = x
+
+        xi = np.sqrt(L_p**2 - r**2 - s**2)
+        cos_cos = xi/L_p
+        eps = 1e-4
+        signed_eps = -np.sign(cos_cos)*eps
+        delta = np.arccos(cos_cos + signed_eps)
+
+        h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
+        # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
+        return h1
+    
+    def h2_fn(self, x):
+        """ Takes in numpy array x and returns the value of the CBF function in numpy """
+        L_p = self.L_p
+        alpha, beta, gamma, r, s, dr, ds = x
+
+        h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
+        return h2
+    
+    def phi_fn(self, x):
+        """ Takes in torch.tensor x and returns the value of the CBF function """
+
+        h_complex = -1/self.kappa * np.log(np.exp(-self.kappa*self.h1_fn(x)) + np.exp(-self.kappa*self.h2_fn(x))) + math.log(2)/self.kappa
+
+        ######################################
+        ############### UNION ################
+        ######################################
+        # # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
+        # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
+        # h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
+
+        # h_complex = 1/self.kappa * torch.log(torch.exp(self.kappa*h1) + torch.exp(self.kappa*h2)) - math.log(2)/self.kappa
+
+        return h_complex
     
     def phi_grad(self, x):
         """ Takes in numpy array x and returns the gradient of the CBF function in numpy """
-        # IPython.embed()
-        x_torch = self._x_numpy_to_x_torch(x)
-        x_torch.requires_grad = True
-        phi_torch = self.torch_phi(x_torch)
-        phi_grad = torch.autograd.grad(phi_torch, x_torch)[0]
+        alpha, beta, gamma, r, s, dr, ds = x
+        L = self.L_p
+        # dh1_dx = np.array([0, 
+        #                    -2*self.n1*beta*(beta**2+gamma**2)**(self.n1-1),
+        #                    -2*self.n1*gamma*(beta**2+gamma**2)**(self.n1-1),
+        #                    0, 0, 0, 0]).reshape((1,7))
+        xi = np.sqrt(L**2 - r**2 - s**2)
+        cos_cos = xi/L
+        eps = 1e-4
+        eps = -np.sign(cos_cos)*eps
         
-        x_torch.requires_grad = False
-        phi_grad = phi_grad.detach().cpu().numpy()
-        return phi_grad
-    
+        dh1_dx = np.array([
+            0, 
+            -2*beta*self.n1*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
+            -2*gamma*self.n1*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
+            -(2*self.n1*r*np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*(1 - (eps + (L**2 - r**2 - s**2)**(1/2)/L)**2)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+            -(2*self.n1*s*np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*(1 - (eps + (L**2 - r**2 - s**2)**(1/2)/L)**2)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+            0, 
+            0])
+        dh2_dx = np.array([0, 0, 0, 
+                           -2*self.k*dr - 2*self.n2*r*(r**2+s**2)**(self.n2-1),
+                           -2*self.k*ds - 2*self.n2*s*(r**2+s**2)**(self.n2-1),
+                           -2*self.k*r, -2*self.k*s]).reshape((1,7))
+        return dh1_dx, dh2_dx
+   
     def Lfh(self, x):
         """ Takes in numpy array x and returns the value of Lfh in numpy """
-        L_f_h = self.phi_grad(x).dot(self.f(x))
+        h_complex = self.phi_fn(x)
+        
+        dh1_dx, dh2_dx = self.phi_grad(x)
+        
+        h1 = self.h1_fn(x)
+        h2 = self.h2_fn(x)
+
+        lambda_1 = np.exp(-self.kappa*(h1 - h_complex))
+        lambda_2 = np.exp(-self.kappa*(h2 - h_complex))
+
+        L_f_h = lambda_1*(dh1_dx.dot(self.f(x))) + lambda_2*(dh2_dx.dot(self.f(x)))
         return L_f_h
 
     def Lgh(self, x):
         """ Takes in numpy array x and returns the value of Lfg in numpy """
-        L_g_h = self.phi_grad(x).dot(self.g(x))
+        h_complex = self.phi_fn(x)
+        
+        dh1_dx, dh2_dx = self.phi_grad(x)
+        
+        h1 = self.h1_fn(x)
+        h2 = self.h2_fn(x)
+
+        lambda_1 = np.exp(-self.kappa*(h1 - h_complex))
+        lambda_2 = np.exp(-self.kappa*(h2 - h_complex))
+
+        L_g_h = lambda_1*(dh1_dx.dot(self.g(x))) + lambda_2*(dh2_dx.dot(self.g(x)))
         return L_g_h
 
     def f(self, x):
