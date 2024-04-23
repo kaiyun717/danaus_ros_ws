@@ -37,20 +37,40 @@ class CBFController:
     def solve_qp(self, x, u_ref):
         # IPython.embed()
         
+        Lgh = self.cbf.Lgh(x)
+        Lfh = self.cbf.Lfh(x)
+        h = self.cbf.phi_fn(x)
+
+        ######################################
+        ############## USUAL QP ##############
+        ######################################
         H = self.qp_weight
         f = -self.qp_weight @ u_ref
         A = np.vstack((
-            -self.cbf.Lgh(x),
+            -Lgh,
             -np.identity(4),
             np.identity(4)
         ))
         B = np.vstack((
-            self.cbf.Lfh(x),
+            Lfh, # + 0.01*h,
             -self.u_min,
             self.u_max
         ))
-        u_safe = solvers.qp(matrix(H*1.0), matrix(f*1.0), matrix(A*1.0), matrix(B*1.0))
+        try:
+            u_safe = solvers.qp(matrix(H*1.0), matrix(f*1.0), matrix(A*1.0), matrix(B*1.0))
+        except ValueError as e:
+            IPython.embed()
         return np.array(u_safe["x"])
+        
+        # if np.linalg.norm(Lgh) < 1e-6:
+        #     return u_ref
+        # else:
+        #     nu = -Lfh - Lgh@u_ref
+        #     u_safe = u_ref + np.max([0, nu[0][0]]) * Lgh.reshape((4,1))/(np.linalg.norm(Lgh))**2
+        #     # new_u_min = np.copy(self.u_min)
+        #     # new_u_min[0] = 9.81
+        #     # return np.clip(u_safe, new_u_min, self.u_max)
+        #     return np.clip(u_safe, self.u_min, self.u_max)
 
 
 if __name__ == "__main__":

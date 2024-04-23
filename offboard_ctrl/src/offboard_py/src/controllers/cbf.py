@@ -38,40 +38,40 @@ class CBF:
         x_torch = torch.from_numpy(x.astype("float32"))
         return x_torch
 
-    def torch_phi(self, x):
-        """ Takes in torch.tensor x and returns the value of the CBF function """
-        L_p = self.L_p
+    # def torch_phi(self, x):
+    #     """ Takes in torch.tensor x and returns the value of the CBF function """
+    #     L_p = self.L_p
         
-        ##########################################################################
-        ### x = [alpha (0), beta (1), gamma (2), r (3), s (4), dr (5), ds (6)] ###
-        ##########################################################################
-        alpha, beta, gamma, r, s, dr, ds = x
+    #     ##########################################################################
+    #     ### x = [alpha (0), beta (1), gamma (2), r (3), s (4), dr (5), ds (6)] ###
+    #     ##########################################################################
+    #     alpha, beta, gamma, r, s, dr, ds = x
         
-        xi = torch.sqrt(L_p**2 - r**2 - s**2)
-        cos_cos = xi/L_p
-        eps = 1e-4
-        signed_eps = -torch.sign(cos_cos)*eps
-        delta = torch.acos(cos_cos + signed_eps)
+    #     xi = torch.sqrt(L_p**2 - r**2 - s**2)
+    #     cos_cos = xi/L_p
+    #     eps = 1e-4
+    #     signed_eps = -torch.sign(cos_cos)*eps
+    #     delta = torch.acos(cos_cos + signed_eps)
 
-        # ######################################
-        # ############ INTERSECTION ############
-        # ######################################
-        # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
-        h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
-        h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
+    #     # ######################################
+    #     # ############ INTERSECTION ############
+    #     # ######################################
+    #     # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
+    #     h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
+    #     h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
 
-        h_complex = -1/self.kappa * torch.log(torch.exp(-self.kappa*h1) + torch.exp(-self.kappa*h2)) + math.log(2)/self.kappa
+    #     h_complex = -1/self.kappa * torch.log(torch.exp(-self.kappa*h1) + torch.exp(-self.kappa*h2)) + math.log(2)/self.kappa
 
-        ######################################
-        ############### UNION ################
-        ######################################
-        # # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
-        # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
-        # h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
+    #     ######################################
+    #     ############### UNION ################
+    #     ######################################
+    #     # # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
+    #     # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
+    #     # h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
 
-        # h_complex = 1/self.kappa * torch.log(torch.exp(self.kappa*h1) + torch.exp(self.kappa*h2)) - math.log(2)/self.kappa
+    #     # h_complex = 1/self.kappa * torch.log(torch.exp(self.kappa*h1) + torch.exp(self.kappa*h2)) - math.log(2)/self.kappa
 
-        return h_complex
+    #     return h_complex
     
     # def phi_fn(self, x):
     #     """ Takes in numpy array x and returns the value of the CBF function in numpy """
@@ -115,29 +115,33 @@ class CBF:
 
         h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
         # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
-        return h1
+        # return np.tanh(h1)
+        return h1/((self.delta_max**2)**self.n1)
     
     def h2_fn(self, x):
         """ Takes in numpy array x and returns the value of the CBF function in numpy """
         L_p = self.L_p
         alpha, beta, gamma, r, s, dr, ds = x
 
-        h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
-        return h2
+        xi = np.sqrt(L_p**2 - r**2 - s**2)
+        cos_cos = xi/L_p
+        eps = 1e-4
+        signed_eps = -np.sign(cos_cos)*eps
+        delta = np.arccos(cos_cos + signed_eps)
+
+        # h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
+
+        delta_dot = (r*dr)/(L_p*((- L_p**2 + r**2 + s**2)/L_p**2 + 1)**(1/2)*(L_p**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L_p*((- L_p**2 + r**2 + s**2)/L_p**2 + 1)**(1/2)*(L_p**2 - r**2 - s**2)**(1/2))
+        h2 = (self.rs_max**2)**self.n2 - (delta**2)**self.n2 - self.k*(2*delta*delta_dot)
+        # return np.tanh(h2)
+        return h2/((self.rs_max**2)**self.n2)
     
     def phi_fn(self, x):
         """ Takes in torch.tensor x and returns the value of the CBF function """
 
-        h_complex = -1/self.kappa * np.log(np.exp(-self.kappa*self.h1_fn(x)) + np.exp(-self.kappa*self.h2_fn(x))) + math.log(2)/self.kappa
-
-        ######################################
-        ############### UNION ################
-        ######################################
-        # # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
-        # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
-        # h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
-
-        # h_complex = 1/self.kappa * torch.log(torch.exp(self.kappa*h1) + torch.exp(self.kappa*h2)) - math.log(2)/self.kappa
+        # IPython.embed()
+        h_complex = -1/self.kappa * np.log(np.exp(-self.kappa*self.h1_fn(x)) + np.exp(-self.kappa*self.h2_fn(x))) #+ math.log(2)/self.kappa
+        # h_complex = np.
 
         return h_complex
     
@@ -153,19 +157,55 @@ class CBF:
         cos_cos = xi/L
         eps = 1e-4
         eps = -np.sign(cos_cos)*eps
+
+        ###### Normalizing with max value #########
+        dh1_dx = np.array([[
+            0, 
+            -2*beta*self.n1*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
+            -2*gamma*self.n1*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
+            -(2*self.n1*r*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+            -(2*self.n1*s*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+            0, 
+            0]
+        ]).reshape((1,7))
+        dh1_dx = dh1_dx/((self.delta_max**2)**self.n1)
         
-        dh1_dx = np.array([
-            0, 
-            -2*beta*self.n1*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
-            -2*gamma*self.n1*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
-            -(2*self.n1*r*np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*(1 - (eps + (L**2 - r**2 - s**2)**(1/2)/L)**2)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
-            -(2*self.n1*s*np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos(eps + (L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*(1 - (eps + (L**2 - r**2 - s**2)**(1/2)/L)**2)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
-            0, 
-            0])
-        dh2_dx = np.array([0, 0, 0, 
-                           -2*self.k*dr - 2*self.n2*r*(r**2+s**2)**(self.n2-1),
-                           -2*self.k*ds - 2*self.n2*s*(r**2+s**2)**(self.n2-1),
-                           -2*self.k*r, -2*self.k*s]).reshape((1,7))
+        dh2_dx = np.array([
+            0, 0, 0, 
+            - 2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(dr/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (r**2*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (r**2*dr)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2)) + (r*s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (r*s*ds)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2))) - (2*self.k*r*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) - (2*self.n1*r*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**(self.n1 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+            - 2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(ds/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s**2*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (s**2*ds)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2)) + (r*dr*s)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (r*dr*s)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2))) - (2*self.k*s*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) - (2*self.n1*s*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**(self.n1 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+            -(2*self.k*r*np.arccos((L**2 - r**2 - s**2)**(1/2)/L))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+            -(2*self.k*s*np.arccos((L**2 - r**2 - s**2)**(1/2)/L))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))])
+        
+        dh2_dx = dh2_dx/((self.rs_max**2)**self.n2)
+
+
+        ###### Normalizing with tanh func #########
+        # dh2_dx = np.array([0, 0, 0, 
+        #                    (2*self.k*dr + 2*self.n2*r*(r**2 + s**2)**(self.n2 - 1))*(np.tanh(self.k*(2*r*dr + 2*s*ds) - self.rs_max**(2*self.n2) + (r**2 + s**2)**self.n2)**2 - 1), 
+        #                    (2*self.k*ds + 2*self.n2*s*(r**2 + s**2)**(self.n2 - 1))*(np.tanh(self.k*(2*r*dr + 2*s*ds) - self.rs_max**(2*self.n2) + (r**2 + s**2)**self.n2)**2 - 1), 
+        #                    2*self.k*r*(np.tanh(self.k*(2*r*dr + 2*s*ds) - self.rs_max**(2*self.n2) + (r**2 + s**2)**self.n2)**2 - 1), 
+        #                    2*self.k*s*(np.tanh(self.k*(2*r*dr + 2*s*ds) - self.rs_max**(2*self.n2) + (r**2 + s**2)**self.n2)**2 - 1)]).reshape((1,7))
+
+        # ###### Normalizing with tanh func #########
+        # dh1_dx = np.array([
+        #     0, 
+        #     2*beta*self.n1*(np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**self.n1 - self.delta_max**(2*self.n1))**2 - 1)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
+        #     2*gamma*self.n1*(np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**self.n1 - self.delta_max**(2*self.n1))**2 - 1)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1), 
+        #     (2*self.n1*r*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**self.n1 - self.delta_max**(2*self.n1))**2 - 1)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+        #     (2*self.n1*s*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**self.n1 - self.delta_max**(2*self.n1))**2 - 1)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2 + beta**2 + gamma**2)**(self.n1 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+        #     0, 
+        #     0]).reshape((1,7))
+        # dh1_dx = dh1_dx
+
+
+        # dh2_dx = np.array([
+        #     0, 0, 0, 
+        #     (np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**self.n2 - (self.rs_max**2)**self.n2 + 2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))**2 - 1)*(2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(dr/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (r**2*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (r**2*dr)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2)) + (r*s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (r*s*ds)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2))) + (2*self.k*r*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (2*self.n2*r*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**(self.n2 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))), 
+        #     (np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**self.n2 - (self.rs_max**2)**self.n2 + 2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))**2 - 1)*(2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(ds/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s**2*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (s**2*ds)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2)) + (r*dr*s)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(3/2)) - (r*dr*s)/(L**3*((- L**2 + r**2 + s**2)/L**2 + 1)**(3/2)*(L**2 - r**2 - s**2)**(1/2))) + (2*self.k*s*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (2*self.n2*s*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**(self.n2 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))), 
+        #     (2*self.k*r*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**self.n2 - (self.rs_max**2)**self.n2 + 2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))**2 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)), 
+        #     (2*self.k*s*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*(np.tanh((np.arccos((L**2 - r**2 - s**2)**(1/2)/L)**2)**self.n2 - (self.rs_max**2)**self.n2 + 2*self.k*np.arccos((L**2 - r**2 - s**2)**(1/2)/L)*((r*dr)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2)) + (s*ds)/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))))**2 - 1))/(L*((- L**2 + r**2 + s**2)/L**2 + 1)**(1/2)*(L**2 - r**2 - s**2)**(1/2))])
+
         return dh1_dx, dh2_dx
    
     def Lfh(self, x):
