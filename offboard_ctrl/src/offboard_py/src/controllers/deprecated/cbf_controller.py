@@ -2,7 +2,7 @@ import IPython
 
 import numpy as np
 from cvxopt import matrix, solvers
-from src.controllers.cbf import CBF
+from offboard_ctrl.src.offboard_py.src.controllers.complex_cbf import CBF
 
 g = 9.81
 
