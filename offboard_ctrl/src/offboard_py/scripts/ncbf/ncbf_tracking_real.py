@@ -34,6 +34,7 @@ from src.neural_cbf.utils import load_phi_and_params
 from src.neural_cbf.ncbf_numpy_wrapper import NCBFNumpy
 from src.neural_cbf.ncbf_controller import NCBFController
 from src.env.deploy_flying_inv_pend import FlyingInvertedPendulumEnv
+from src.controllers.torque_lqr import TorqueLQR
 
 
 class NCBFTrackingNode:
@@ -79,8 +80,6 @@ class NCBFTrackingNode:
         
         self.mass = mass                        # Mass of the quadrotor + pendulum
         self.L = L                              # Length from pendulum base to CoM
-        self.Q = Q                              # State cost matrix
-        self.R = R                              # Input cost matrix
         self.dt = 1/self.hz                     # Time step
         self.lqr_itr = lqr_itr                  # Number of iterations for Infinite-Horizon LQR
         self.cont_duration = cont_duration      # Duration for which the controller should run (in seconds)
@@ -114,37 +113,20 @@ class NCBFTrackingNode:
         ### Goal Position ###
         takeoff_pose = np.array([0, 0, self.takeoff_height])
 
-        ### Takeoff Controller ###
-        Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-        R_takeoff = 1.0 * np.diag([2, 2, 2, 1])
-        self.nom_cont = ConstantPositionTracker(self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
-        self.nom_K_inf = self.nom_cont.infinite_horizon_LQR(self.lqr_itr)
-        self.nom_goal = self.nom_cont.xgoal
-        self.nom_input = self.nom_cont.ugoal
-
-        ### Tracking Controller ###
+        ### Nominal Controller ###
         if self.track_type == "constant":
             if self.lqr_cont_type == "with_pend":
-                self.cont = ConstantPositionTrackerDecoupled(self.L, self.Q, self.R, np.array([0.5, 0.5, self.takeoff_height + 0.5]), self.dt)
-                self.cont_K_inf_x, self.cont_K_inf_y, self.cont_K_inf_z = self.cont.infinite_horizon_LQR(self.lqr_itr)
-                # self.cont_K_inf[1, -4] = -15
-                # self.cont_K_inf[0, -3] = 15
-                self.xgoal_x = self.cont.xgoal_x
-                self.ugoal_x = self.cont.ugoal_x
-                self.xgoal_y = self.cont.xgoal_y
-                self.ugoal_y = self.cont.ugoal_y
-                self.xgoal_z = self.cont.xgoal_z
-                self.ugoal_z = self.cont.ugoal_z
+                Q_nom = Q
+                R_nom = R
+                self.nom_cont = TorqueLQR(self.L, Q_nom, R_nom, takeoff_pose, self.dt)
+                self.nom_K_inf = self.nom_cont.infinite_horizon_LQR(self.lqr_itr)
+                self.nom_goal = self.nom_cont.xgoal
+                self.nom_input = self.nom_cont.ugoal
             elif self.lqr_cont_type == "without_pend":
-                self.cont = ConstantPositionTracker(self.L, self.Q, self.R, np.array([0.0, 0.0, self.takeoff_height]), self.dt)
-                self.cont_K_inf = self.cont.infinite_horizon_LQR(self.lqr_itr)
-                # self.cont_K_inf[1, -4] = -15
-                # self.cont_K_inf[0, -3] = 15
-                self.xgoal = self.cont.xgoal
-                self.ugoal = self.cont.ugoal
+                pass
         else:
             raise ValueError("Invalid tracking type. Circualr not implemented.")
-        
+
         ### Takeoff Pose ###
         self.takeoff_pose = PoseStamped()
         self.takeoff_pose.pose.position.x = 0
