@@ -16,7 +16,6 @@ class VehicleStateCB:
         self.mode = mode
         self.pose = PoseStamped()
         self.velocity = TwistStamped()
-        
         if mode == "real":
             # self.pose_sub = rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.pose_cb)
             self.vicon_sub = rospy.Subscriber('vicon/danaus12/danaus12', TransformStamped, self.pose_cb)
@@ -25,8 +24,10 @@ class VehicleStateCB:
         
         if mode == "real":
             self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity_local', TwistStamped, self.velocity_cb)
+            self.velocity_body_sub = rospy.Subscriber('mavros/local_position/velocity_body', TwistStamped, self.velocity_body_cb)
         elif mode == "sim":
             self.velocity_sub = rospy.Subscriber('mavros/local_position/velocity_local', TwistStamped, self.velocity_cb)
+            self.velocity_body_sub = rospy.Subscriber('mavros/local_position/velocity_body', TwistStamped, self.velocity_body_cb)
 
         self.targ_att_sub = rospy.Subscriber("/mavros/setpoint_raw/target_attitude", AttitudeTarget, self.targ_att_cb)
 
@@ -53,9 +54,17 @@ class VehicleStateCB:
     def velocity_cb(self, msg):
         if self.mode == "sim":
             pass
+            # self.velocity = msg
             # self.velocity.twist = msg.twist[2]
         elif self.mode == "real":
             self.velocity = msg
+
+    def velocity_body_cb(self, msg):
+        if self.mode == "sim":
+            # pass
+            self.velocity_body = msg
+        elif self.mode == "real":
+            self.velocity_body = msg
 
     def get_state(self):
         return self.state
@@ -81,7 +90,14 @@ class VehicleStateCB:
                         # Yaw, Pitch, Roll 
         return np.array([self.velocity.twist.angular.z, self.velocity.twist.angular.y, self.velocity.twist.angular.x])
     
+    def get_zyx_angular_velocity_body(self):
+        # Yaw, Pitch, Roll 
+        return np.array([self.velocity_body.twist.angular.z, self.velocity_body.twist.angular.y, self.velocity_body.twist.angular.x])
 
+    def get_xyz_angular_velocity_body(self):
+        # Yaw, Pitch, Roll 
+        return np.array([self.velocity_body.twist.angular.x, self.velocity_body.twist.angular.y, self.velocity_body.twist.angular.z])
+        
 if __name__ == "__main__":
     rospy.init_node('vehicle_state_cb', anonymous=True)
     
