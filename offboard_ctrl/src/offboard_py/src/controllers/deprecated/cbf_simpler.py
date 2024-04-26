@@ -128,16 +128,8 @@ class CBF:
     def phi_fn(self, x):
         """ Takes in torch.tensor x and returns the value of the CBF function """
 
-        h_complex = -1/self.kappa * np.log(np.exp(-self.kappa*self.h1_fn(x)) + np.exp(-self.kappa*self.h2_fn(x))) + math.log(2)/self.kappa
-
-        ######################################
-        ############### UNION ################
-        ######################################
-        # # h1 = (self.delta_max**2)**self.n1 - (beta**2 + gamma**2)**self.n1
-        # h1 = (self.delta_max**2)**self.n1 - (delta**2 + beta**2 + gamma**2)**self.n1
-        # h2 = (self.rs_max**2)**self.n2 - (r**2 + s**2)**self.n2 - self.k*(2*r*dr + 2*s*ds)
-
-        # h_complex = 1/self.kappa * torch.log(torch.exp(self.kappa*h1) + torch.exp(self.kappa*h2)) - math.log(2)/self.kappa
+        h_complex = -1/self.kappa * np.log(np.exp(-self.kappa*self.h1_fn(x)) + np.exp(-self.kappa*self.h2_fn(x))) #+ math.log(2)/self.kappa
+        h_complex = -np.log(np.exp(-self.h1_fn(x)) + np.exp(-self.h2_fn(x)))
 
         return h_complex
     
