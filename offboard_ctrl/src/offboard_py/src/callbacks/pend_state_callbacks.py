@@ -10,7 +10,7 @@ import collections
 
 
 class PendulumCB:
-    def __init__(self, mode) -> None:
+    def __init__(self, mode, L_p=0.69) -> None:
         self.pose = PoseStamped()
         self.prev_pose = PoseStamped()
         self.avg_vel = np.array([0, 0])
@@ -26,6 +26,8 @@ class PendulumCB:
 
         # self.rs_vel_pub = rospy.Publisher('pendulum/rs_vel', TwistStamped, queue_size=10)
         # self.rs_vel_avg_pub = rospy.Publisher('pendulum/rs_vel_avg', TwistStamped, queue_size=10)
+
+        self.L_p = L_p
 
         self.mode = mode
         self.dq_len = 10
@@ -81,6 +83,26 @@ class PendulumCB:
         # r = vehicle_pose[0] - response.link_state.pose.position.x
         # s = vehicle_pose[1] - response.link_state.pose.position.y
         return np.array([r, s])
+    
+    def get_rs_ang(self, vehicle_pose=None):
+        rs_pose = self.get_rs_pose(vehicle_pose)
+        xi = np.sqrt(self.L_p**2 - rs_pose[0]**2 - rs_pose[1]**2)
+        roll = np.arctan2(rs_pose[1], xi)       # Roll is about the x-axis. Thus, use y and z.
+        pitch = np.arctan2(rs_pose[0], xi)      # Pitch is about the y-axis. Thus, use x and z.
+        return np.array([roll, pitch])
+
+    def get_rs_ang_vel(self, vehicle_pose=None, vehicle_vel=None):
+        rs_ang = self.get_rs_ang(vehicle_pose)
+        
+        current_time = self.pose.header.stamp.to_sec()
+        prev_time = self.prev_pose.header.stamp.to_sec()
+        dt = current_time - prev_time
+        if dt < 1e-5:
+            print("Time difference is too small!")
+            return np.array([0, 0])
+        roll_dot = ...          ### NOTE: NOT IMPLEMENTED!!!
+        pitch_dot = ...         ### NOTE: NOT IMPLEMENTED!!!
+        return np.array([roll_dot, pitch_dot])
     
     def get_rs_vel(self, vehicle_vel=None, dt=None):
         if self.mode == 'sim':

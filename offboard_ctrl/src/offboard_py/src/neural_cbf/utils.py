@@ -15,12 +15,12 @@ def load_phi_and_params(exp_name, checkpoint_number, device):
     ###############################
     ##### Load the parameters #####
     ###############################
-    fnm = "./log/%s/args.txt" % exp_name
+    fnm = "danaus_ros_ws/offboard_ctrl/src/trained_ncbf/log/%s/args.txt" % exp_name
     # args = load_args(fnm) # can't use, args conflicts with args in outer scope
     with open(fnm, 'r') as f:
         json_data = json.load(f)
     args = DotMap(json_data)
-    param_dict = pickle.load(open("./log/%s/param_dict.pkl" % exp_name, "rb"))
+    param_dict = pickle.load(open("danaus_ros_ws/offboard_ctrl/src/trained_ncbf/log/%s/param_dict.pkl" % exp_name, "rb"))
 
     r = param_dict["r"]
     x_dim = param_dict["x_dim"]
@@ -69,7 +69,7 @@ def load_phi_and_params(exp_name, checkpoint_number, device):
     print("=====================================================")
     print("Loading checkpoint %d of experiment %s" % (checkpoint_number, exp_name))
     print("=====================================================")
-    phi_load_fpth = "./checkpoint/%s/checkpoint_%i.pth" % (exp_name, checkpoint_number)
+    phi_load_fpth = "danaus_ros_ws/offboard_ctrl/src/trained_ncbf/checkpoint/%s/checkpoint_%i.pth" % (exp_name, checkpoint_number)
     phi_fn.load_state_dict(torch.load(phi_load_fpth, map_location=lambda storage, loc: storage))
 
     return phi_fn, param_dict

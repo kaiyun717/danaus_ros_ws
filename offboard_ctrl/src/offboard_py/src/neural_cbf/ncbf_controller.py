@@ -15,7 +15,6 @@ class NCBFController:
                     cbf_fn, 
                     nom_controller,
                     param_dict, 
-                    args,
                     eps_bdry=1.0, 
                     eps_outside=5.0):
         super().__init__()
@@ -40,51 +39,47 @@ class NCBFController:
 		
         self.mixer = M * max_thrust		# normalize to max thrust so that it has max_thrust when v = 1
 
-        if self.args.rollout_u_ref == "LQR":
-            L_p = param_dict["L_p"]
-            M = param_dict["M"]
-            # J_x = param_dict["J_x"]
-            # J_y = param_dict["J_y"]
-            # J_z = param_dict["J_z"]
+        # if self.args.rollout_u_ref == "LQR":
+        #     L_p = param_dict["L_p"]
+        #     M = param_dict["M"]
+        #     # J_x = param_dict["J_x"]
+        #     # J_y = param_dict["J_y"]
+        #     # J_z = param_dict["J_z"]
 
-            A = np.zeros((10, 10))  # 10 x 10
-            A[0:3, 3:6] = np.eye(3)
-            A[6:8, 8:10] = np.eye(2)
-            A[8, 0] = -3 * g / (2 * L_p)
-            A[9, 1] = -3 * g / (2 * L_p)
-            A[8, 6] = 3 * g / (2 * L_p)
-            A[9, 7] = 3 * g / (2 * L_p)
+        #     A = np.zeros((10, 10))  # 10 x 10
+        #     A[0:3, 3:6] = np.eye(3)
+        #     A[6:8, 8:10] = np.eye(2)
+        #     A[8, 0] = -3 * g / (2 * L_p)
+        #     A[9, 1] = -3 * g / (2 * L_p)
+        #     A[8, 6] = 3 * g / (2 * L_p)
+        #     A[9, 7] = 3 * g / (2 * L_p)
 
-            B = np.zeros((10, 4))
+        #     B = np.zeros((10, 4))
 
-            # J = torch.tensor([
-            # 	[self.J_xx, self.J_xy, self.J_xz],
-            # 	[self.J_xy, self.J_yy, self.J_yz],
-            # 	[self.J_xz, self.J_yz, self.J_zz]]).to(self.device)
-            # norm_torques = u[:, 1:]@torch.inverse(J)
-            J_inv = np.array([
-                [305.7518,  -0.6651,  -5.3547],
-                [ -0.6651, 312.6261,  -3.1916],
-                [ -5.3547,  -3.1916, 188.9651]])
+        #     # J = torch.tensor([
+        #     # 	[self.J_xx, self.J_xy, self.J_xz],
+        #     # 	[self.J_xy, self.J_yy, self.J_yz],
+        #     # 	[self.J_xz, self.J_yz, self.J_zz]]).to(self.device)
+        #     # norm_torques = u[:, 1:]@torch.inverse(J)
+        #     J_inv = np.array([
+        #         [305.7518,  -0.6651,  -5.3547],
+        #         [ -0.6651, 312.6261,  -3.1916],
+        #         [ -5.3547,  -3.1916, 188.9651]])
 
-            B[3:6, 1:4] = J_inv
+        #     B[3:6, 1:4] = J_inv
 
-            # Use LQR to compute feedback portion of controller
-            q = self.args.rollout_LQR_q
-            r = self.args.rollout_LQR_r
-            Q = q * np.eye(10)
-            R = r * np.eye(4)
-            K, S, E = control.lqr(A, B, Q, R)
-            self.K = K
+        #     # Use LQR to compute feedback portion of controller
+        #     q = self.args.rollout_LQR_q
+        #     r = self.args.rollout_LQR_r
+        #     Q = q * np.eye(10)
+        #     R = r * np.eye(4)
+        #     K, S, E = control.lqr(A, B, Q, R)
+        #     self.K = K
 
-    def compute_u_ref(self, x):
-        u = - self.K @ np.squeeze(x)[:10]
-        return u
-
-    def compute_control(self, x):
+    def compute_control(self, x, u_ref):
         ############ Init log vars
         # apply_u_safe = None
-        u_ref = self.compute_u_ref(x)
+        # u_ref = self.compute_u_ref(x)
         # phi_vals = None
         # qp_slack = None
         # qp_lhs = None
