@@ -90,9 +90,18 @@ class VehicleStateCB:
                         # Yaw, Pitch, Roll 
         return np.array([self.velocity.twist.angular.z, self.velocity.twist.angular.y, self.velocity.twist.angular.x])
     
+<<<<<<< HEAD
     def get_zyx_angular_velocity_body(self):
         # Yaw, Pitch, Roll 
         return np.array([self.velocity_body.twist.angular.z, self.velocity_body.twist.angular.y, self.velocity_body.twist.angular.x])
+=======
+    def get_xyz_angles(self):
+        roll, pitch, yaw = tf.euler_from_quaternion([self.pose.pose.orientation.x, self.pose.pose.orientation.y, self.pose.pose.orientation.z, self.pose.pose.orientation.w])
+        return np.array([roll, pitch, yaw])
+    
+    def get_xyz_angular_velocity(self):
+        return np.array([self.velocity.twist.angular.x, self.velocity.twist.angular.y, self.velocity.twist.angular.z])
+>>>>>>> 06bd4a8c8c7e844d0ea7a2f2fe4a9f9e503492c6
 
     def get_xyz_angular_velocity_body(self):
         # Yaw, Pitch, Roll 

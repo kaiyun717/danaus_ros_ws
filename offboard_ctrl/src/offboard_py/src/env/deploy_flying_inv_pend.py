@@ -1,12 +1,9 @@
 import numpy as np
-import math
 import IPython
 import sys, os
-import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d.axes3d as Axes3D
 
 
-class FlyingInvertedPendulumEnv():
+class FlyingInvertedPendulumEnv:
     def __init__(self, 
                  dt,
                  model_param_dict, 
@@ -35,8 +32,8 @@ class FlyingInvertedPendulumEnv():
             "dgamma", "dbeta", "dalpha", 
             "phi", "theta", 
             "dphi", "dtheta", 
-            "x", "y", "z", 
-            "dx", "dy", "dz"
+            "x", "y", "z",                  # Including the translational positions
+            "dx", "dy", "dz"                # Including the translational velocities
         ]
         state_index_dict = dict(zip(state_index_names, np.arange(len(state_index_names))))
         self.i = state_index_dict
@@ -113,14 +110,30 @@ class FlyingInvertedPendulumEnv():
         ddphi = (3.0) * (k_y * np.cos(phi) + k_z * np.sin(phi)) * (self.M * self.g) / (
                     2 * self.M * self.L_p * np.cos(theta)) + 2 * dtheta * dphi * np.tan(theta)
 
-        ddtheta = (3.0*(-k_x*np.cos(theta)-k_y*np.sin(phi)*np.sin(theta) + k_z*np.cos(phi)*np.sin(theta))*(self.M*self.g)/(2.0*self.M*self.L_p)) - np.square(dphi)*np.sin(theta)*np.cos(theta)
+        ddtheta = (3.0*(-k_x*np.cos(theta)-k_y*np.sin(phi)*np.sin(theta) + k_z*np.cos(phi)*np.sin(theta))*(self.M*self.g)/(2.0*self.M*self.L_p)) \
+                - np.square(dphi)*np.sin(theta)*np.cos(theta)
 
         ddx = k_x*self.g
         ddy = k_y*self.g
         ddz = k_z*self.g - self.g
 
         # Including translational motion
-        f = np.vstack([x[:,self.i["dgamma"]], x[:,self.i["dbeta"]], x[:,self.i["dalpha"]], np.zeros(bs), np.zeros(bs), np.zeros(bs), dphi, dtheta, ddphi, ddtheta, x[:,self.i["dx"]], x[:,self.i["dy"]], x[:,self.i["dz"]], ddx, ddy, ddz]).T
+        f = np.vstack([x[:,self.i["dgamma"]], 
+                       x[:,self.i["dbeta"]], 
+                       x[:,self.i["dalpha"]], 
+                       np.zeros(bs), 
+                       np.zeros(bs), 
+                       np.zeros(bs), 
+                       dphi, 
+                       dtheta, 
+                       ddphi, 
+                       ddtheta, 
+                       x[:,self.i["dx"]], 
+                       x[:,self.i["dy"]], 
+                       x[:,self.i["dz"]], 
+                       ddx, 
+                       ddy, 
+                       ddz]).T
         return f
 
     def _g_model(self, x):
