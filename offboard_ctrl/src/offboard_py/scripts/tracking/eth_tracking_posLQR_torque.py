@@ -56,7 +56,7 @@ class ETHTrackingNode:
         self.lqr_itr = lqr_itr                  # Number of iterations for Infinite-Horizon LQR
         self.cont_duration = cont_duration      # Duration for which the controller should run (in seconds)
 
-        self.nx = 6
+        self.nx = 12
         self.nu = 4
 
         self.pend_upright_time = pend_upright_time  # Time to keep the pendulum upright
@@ -77,13 +77,20 @@ class ETHTrackingNode:
         takeoff_pose = np.array([0, 0, self.takeoff_height])
 
         ### Takeoff Controller ###
-        # Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-        # R_takeoff = 1.0 * np.diag([100, 100, 100, 1])
+        Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
+        R_takeoff = 1.0 * np.diag([100, 100, 100, 1])
 
-        Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0])      # Without pendulum
-        R_takeoff = 1.0 * np.diag([1, 1, 1, 1])
+        # Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0])      # Without pendulum
+        # R_takeoff = 1.0 * np.diag([1, 1, 1, 1])
         self.takeoff_cont = ConstantPositionTracker(self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
-        self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
+        # self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
+
+        self.takeoff_K_inf = np.array([
+            [0.0, -0.2811391339226578, 0.0, 0.0, -0.3441045682941439, 0.0, 0.0, 0.0, 0.6868616025558042, 0.0, 0.0, 0.07196751754233394],
+            [0.2807869515520457, 0.0, 0.0, 0.3433254386779211, 0.0, 0.0, 0.0, 0.6818239704677094, 0.0, 0.0, 0.07104566774148793, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.06797334687086536, 0.0, 0.0, 0.0405460845467914, 0.0, 0.0],
+            [0.0, 0.0, 0.314877444747869, 0.0, 0.0, 0.8537579344775779, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        ])
         self.takeoff_goal = self.takeoff_cont.xgoal
         self.takeoff_input = self.takeoff_cont.ugoal
 
@@ -161,8 +168,8 @@ class ETHTrackingNode:
             pend_rs_vel = np.array([0, 0])
         
 
-        # x = np.concatenate((quad_xyz.T, quad_xyz_vel.T, quad_zyx_ang.T, quad_zyx_ang_vel.T))
-        x = np.concatenate((quad_zyx_ang.T, quad_zyx_ang_vel.T))
+        x = np.concatenate((quad_xyz.T, quad_xyz_vel.T, quad_zyx_ang.T, quad_xyz_ang_vel_body_enu.T))
+        # x = np.concatenate((quad_zyx_ang.T, quad_zyx_ang_vel.T))
         x = x.reshape((self.nx, 1))
         u = self.takeoff_input - self.takeoff_K_inf @ (x - self.takeoff_goal)  # 0 - K * dx = +ve
 
@@ -530,11 +537,11 @@ if __name__ == "__main__":
     # # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
     # R = 1.0 * np.diag([50, 50, 50, 1])
 
-    # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-    # R = 1.0 * np.diag([100, 100, 100, 100])
+    Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
+    R = 1.0 * np.diag([100, 100, 100, 100])
 
-    Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0])      # Without pendulum
-    R = 1.0 * np.diag([1, 1, 1, 1])
+    # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0])      # Without pendulum
+    # R = 1.0 * np.diag([1, 1, 1, 1])
 
     eth_node = ETHTrackingNode(mode, hz, track_type, mass, L, Q, R, 
                                takeoff_height=takeoff_height, 
