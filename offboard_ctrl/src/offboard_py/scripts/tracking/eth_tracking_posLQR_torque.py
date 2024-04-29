@@ -94,29 +94,29 @@ class ETHTrackingNode:
         self.takeoff_goal = self.takeoff_cont.xgoal
         self.takeoff_input = self.takeoff_cont.ugoal
 
-        self.gains_dict_px4_sim = {
-            "MC_PITCHRATE_P": 0.138,
-            "MC_PITCHRATE_I": 0.168,
-            "MC_PITCHRATE_D": 0.0028,
-            "MC_ROLLRATE_P": 0.094,
-            "MC_ROLLRATE_I": 0.118,
-            "MC_ROLLRATE_D": 0.0017,
-            "MC_YAWRATE_P": 0.1,
-            "MC_YAWRATE_I": 0.11,
-            "MC_YAWRATE_D": 0.0,
-        }
+        # self.gains_dict_px4_sim = {
+        #     "MC_PITCHRATE_P": 0.138,
+        #     "MC_PITCHRATE_I": 0.168,
+        #     "MC_PITCHRATE_D": 0.0028,
+        #     "MC_ROLLRATE_P": 0.094,
+        #     "MC_ROLLRATE_I": 0.118,
+        #     "MC_ROLLRATE_D": 0.0017,
+        #     "MC_YAWRATE_P": 0.1,
+        #     "MC_YAWRATE_I": 0.11,
+        #     "MC_YAWRATE_D": 0.0,
+        # }
 
-        self.gains_dict_lqr = {
-            "MC_PITCHRATE_P": 1,
-            "MC_PITCHRATE_I": 0,
-            "MC_PITCHRATE_D": 0,
-            "MC_ROLLRATE_P": 1,
-            "MC_ROLLRATE_I": 0,
-            "MC_ROLLRATE_D": 0,
-            "MC_YAWRATE_P": 1,
-            "MC_YAWRATE_I": 0,
-            "MC_YAWRATE_D": 0,
-        }
+        # self.gains_dict_lqr = {
+        #     "MC_PITCHRATE_P": 1,
+        #     "MC_PITCHRATE_I": 0,
+        #     "MC_PITCHRATE_D": 0,
+        #     "MC_ROLLRATE_P": 1,
+        #     "MC_ROLLRATE_I": 0,
+        #     "MC_ROLLRATE_D": 0,
+        #     "MC_YAWRATE_P": 1,
+        #     "MC_YAWRATE_I": 0,
+        #     "MC_YAWRATE_D": 0,
+        # }
 
         ### Tracking Controller ###
         if self.track_type == "constant":

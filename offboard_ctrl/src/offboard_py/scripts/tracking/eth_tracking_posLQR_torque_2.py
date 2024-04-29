@@ -56,7 +56,7 @@ class ETHTrackingNode:
         self.lqr_itr = lqr_itr                  # Number of iterations for Infinite-Horizon LQR
         self.cont_duration = cont_duration      # Duration for which the controller should run (in seconds)
 
-        self.nx = 13
+        self.nx = 12
         self.nu = 4
 
         self.pend_upright_time = pend_upright_time  # Time to keep the pendulum upright
@@ -73,26 +73,50 @@ class ETHTrackingNode:
 
         self.hover_thrust = None
 
+        # self.u_P = 0.5
+        # self.u_I = 0.1
+        # self.u_D = 0.001
+        self.pitch_int = 0.0
+        self.roll_int = 0.0
+        self.yaw_int = 0.0
+        self.gains_dict_px4_sim = {
+            "MC_PITCHRATE_P": 0.138,
+            "MC_PITCHRATE_I": 0.168,
+            "MC_PITCHRATE_D": 0.0028,
+            "MC_ROLLRATE_P": 0.094,
+            "MC_ROLLRATE_I": 0.118,
+            "MC_ROLLRATE_D": 0.0017,
+            "MC_YAWRATE_P": 0.1,
+            "MC_YAWRATE_I": 0.11,
+            "MC_YAWRATE_D": 0.0,
+        }
+        
+
         ### Goal Position ###
         takeoff_pose = np.array([0, 0, self.takeoff_height])
 
         ### Takeoff Controller ###
-        Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-        R_takeoff = 1.0 * np.diag([2, 2, 2, 1])
-        self.takeoff_cont = ConstantPositionTracker(self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
-        self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
-        self.takeoff_goal = self.takeoff_cont.xgoal
-        self.takeoff_input = self.takeoff_cont.ugoal
+        Q_takeoff = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])      # Without pendulum
+        R_takeoff = 1.0 * np.diag([1, 1, 1, 1])
+        # self.takeoff_cont = ConstantPositionTracker(self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
+        # self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
+        # self.takeoff_goal = self.takeoff_cont.xgoal
+        # self.takeoff_input = self.takeoff_cont.ugoal
+        self.takeoff_K_inf = np.array([
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9904236594375369, 0.0, 0.0, 1.7209841208008192],
+            [1.4816729161221946, 0.0, 0.0, 0.2820508569413449, 0.0, 0.0, 0.0, -0.2645216194466015, 0.0, 0.0, -0.38713923609434187, 0.0],
+            [0.0, 1.452935447187532, 0.0, 0.0, 0.2765536175628985, 0.0, 0.2594151935758526, 0.0, 0.0, 0.37965637166446786, 0.0, 0.0],
+            [0.0, 0.0, 0.3980386245466367, 0.0, 0.0, 0.4032993897561105, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        ])
 
-        ### Tracking Controller ###
-        if self.track_type == "constant":
-            self.cont = ConstantPositionTracker(self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
-            self.cont_K_inf = self.cont.infinite_horizon_LQR(self.lqr_itr)
-            self.xgoal = self.cont.xgoal
-            self.ugoal = self.cont.ugoal
-        else:
-            raise ValueError("Invalid tracking type. Circualr not implemented.")
+        self.takeoff_goal = np.array([0, 0, 0, 0, 0, 0, 1, 1, self.takeoff_height, 0, 0, 0]).reshape((self.nx, 1))
+        self.takeoff_input = np.array([9.81, 0, 0, 0]).reshape((self.nu, 1))
         
+        self.J_inv = np.array([
+			[305.7518,  -0.6651,  -5.3547],
+			[ -0.6651, 312.6261,  -3.1916],
+			[ -5.3547,  -3.1916, 188.9651]])
+
         ### Takeoff Pose ###
         self.takeoff_pose = PoseStamped()
         self.takeoff_pose.pose.position.x = 0
@@ -112,10 +136,38 @@ class ETHTrackingNode:
     def _init_node(self):
         rospy.init_node('eth_tracking_node', anonymous=True)
 
+    def _torque_to_body_rate(self, torque, xyz_ang_vel):
+        body_rate = self.J_inv @ torque * self.dt
+        error = body_rate # - xyz_ang_vel
+        
+        error_x = error[0]
+        error_y = error[1]
+        error_z = error[2]
+
+        px = self.gains_dict_px4_sim["MC_ROLLRATE_P"] * error_x
+        py = self.gains_dict_px4_sim["MC_PITCHRATE_P"] * error_y
+        pz = self.gains_dict_px4_sim["MC_YAWRATE_P"] * error_z
+
+        self.roll_int += self.gains_dict_px4_sim["MC_ROLLRATE_I"] * error_x * self.dt
+        self.pitch_int += self.gains_dict_px4_sim["MC_PITCHRATE_I"] * error_y * self.dt
+        self.yaw_int += self.gains_dict_px4_sim["MC_YAWRATE_I"] * error_z * self.dt
+
+        ix = self.roll_int
+        iy = self.pitch_int
+        iz = self.yaw_int
+        
+        dx = self.gains_dict_px4_sim["MC_ROLLRATE_D"] * error_x/self.dt
+        dy = self.gains_dict_px4_sim["MC_PITCHRATE_D"] * error_y/self.dt
+        dz = self.gains_dict_px4_sim["MC_YAWRATE_D"] * error_z/self.dt
+
+        return np.array([px + ix + dx, py + iy + dy, pz + iz + dz])
+
+
     def _quad_lqr_controller(self):
         quad_xyz = self.quad_cb.get_xyz_pose()
         quad_xyz_vel = self.quad_cb.get_xyz_velocity()
-        quad_zyx_ang = self.quad_cb.get_zyx_angles()
+        quad_xyz_ang = self.quad_cb.get_xyz_angles()
+        quad_xyz_ang_vel = self.quad_cb.get_xyz_angular_velocity()
         if self.mode == "sim":
             pend_rs = self.pend_cb.get_rs_pose(vehicle_pose=quad_xyz)
         else:
@@ -125,15 +177,24 @@ class ETHTrackingNode:
         else:
             pend_rs_vel = np.array([0, 0])
         
-        x = np.concatenate((quad_xyz.T, quad_xyz_vel.T, quad_zyx_ang.T, pend_rs.T, pend_rs_vel.T))
+        x = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, quad_xyz.T, quad_xyz_vel.T))
         x = x.reshape((self.nx, 1))
         u = self.takeoff_input - self.takeoff_K_inf @ (x - self.takeoff_goal)  # 0 - K * dx = +ve
 
         self.att_setpoint.header.stamp = rospy.Time.now()
-        self.att_setpoint.body_rate.x = u[0]
-        self.att_setpoint.body_rate.y = u[1]
-        self.att_setpoint.body_rate.z = u[2]
-        self.att_setpoint.thrust = (u[3]/(9.81)) * self.hover_thrust
+        # u_J_inv = self.J_inv @ u[1:].reshape((3,1)) * self.dt
+        # self.u_int += self.u_I * u_J_inv
+        # u_D = self.u_D * (u_J_inv - self.prev_u)/self.dt
+        # self.prev_u = u_J_inv
+
+        # u_body_rates = self.u_P * u_J_inv + self.u_int + u_D
+        u_body_rates = self._torque_to_body_rate(u[1:].reshape((3,1)), quad_xyz_ang_vel.reshape((3,1)))
+        
+        self.att_setpoint.body_rate.x = u_body_rates[0]
+        self.att_setpoint.body_rate.y = u_body_rates[1]
+        self.att_setpoint.body_rate.z = u_body_rates[2]
+
+        self.att_setpoint.thrust = (u[0]/(9.81)) * self.hover_thrust
         self.att_setpoint.thrust = np.clip(self.att_setpoint.thrust, 0.0, 1.0)
         self.quad_att_setpoint_pub.publish(self.att_setpoint) 
 
