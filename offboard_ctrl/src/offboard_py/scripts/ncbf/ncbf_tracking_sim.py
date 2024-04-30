@@ -132,8 +132,6 @@ class NCBFTrackingNode:
                             [1.0498346060574577,0.0,0.0,0.08111887959217115,0.0,0.0,3.1249612183719218,0.0,0.8390135195024693,0.0,0.0,0.2439310793798623,0.0,0.0,0.3542763507641887,0.0,],
                             [0.0,1.0368611054298649,0.0,0.0,0.07970485761038303,0.0,0.0,-3.1048038968779004,0.0,-0.8337170169504385,-0.24373748893808928,0.0,0.0,-0.3536063529300743,0.0,0.0,],
                             [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,],])
-                # K_inf = np.array([[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.7024504701211454,0.0,0.0,1.1852851512706413,],[1.3852948907925406,0.0,0.0,0.09294112801810808,0.0,0.0,4.850403135526314,0.0,1.3073225563654742,0.0,0.0,0.43502731578533,0.0,0.0,0.6150534625520861,0.0,],[0.0,1.3689095025091753,0.0,0.0,0.09134390094087384,0.0,0.0,-4.8228450716358795,0.0,-1.3000908320602735,-0.4346023198568451,0.0,0.0,-0.6138908591725167,0.0,0.0,],[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,],])
-
                 gains_dict_px4 = {"MC_PITCHRATE_P": 0.138,
                                   "MC_PITCHRATE_I": 0.168,
                                   "MC_PITCHRATE_D": 0.0028,
@@ -185,8 +183,8 @@ class NCBFTrackingNode:
         rospy.init_node('eth_tracking_node', anonymous=True)
 
     def _quad_lqr_controller(self, x):
-        u_torque = self.torque_LQR.torque_inputs(x)
-        return u_torque
+        u_nom = self.torque_LQR.torque_body_rate_inputs(x)
+        return u_nom
 
     def _send_attitude_setpoint(self, u):
         """ u[0]: Thrust, u[1]: Roll, u[2]: Pitch, u[3]: Yaw """
@@ -203,15 +201,15 @@ class NCBFTrackingNode:
         quad_xyz_vel = self.quad_cb.get_xyz_velocity()
         quad_xyz_ang = self.quad_cb.get_xyz_angles()
         quad_xyz_ang_vel = self.quad_cb.get_xyz_angular_velocity()   # TODO: Need to verify
-        pend_ang = self.pend_cb.get_rs_ang(vehicle_pose=quad_xyz)
-        pend_ang_vel = self.pend_cb.get_rs_ang_vel(vehicle_pose=None, vehicle_vel=quad_xyz_vel)
-        # pend_ang = np.array([0, 0])
-        # pend_ang_vel = np.array([0, 0])
+        # pend_ang = self.pend_cb.get_rs_ang(vehicle_pose=quad_xyz)
+        # pend_ang_vel = self.pend_cb.get_rs_ang_vel(vehicle_pose=None, vehicle_vel=quad_xyz_vel)
+        pend_ang = np.array([0, 0])
+        pend_ang_vel = np.array([0, 0])
         
         x_safe = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, pend_ang.T, pend_ang_vel.T, quad_xyz.T, quad_xyz_vel.T))
         x_safe = x_safe.reshape((self.nx, 1))
 
-        x_nom = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, pend_ang.T, pend_ang_vel.T, quad_xyz.T, quad_xyz_vel.T))
+        x_nom = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, quad_xyz.T, quad_xyz_vel.T))
         x_nom = x_nom.reshape((self.torque_LQR.nx, 1))
         return x_safe, x_nom
 
@@ -265,15 +263,14 @@ class NCBFTrackingNode:
         rospy.loginfo("Recorded hover thrust: {}".format(self.hover_thrust))
         rospy.loginfo("Takeoff pose achieved!")
 
-    def _pend_upright_real(self, req_time=0.5, tol=0.05):
+    def _pend_upright_real(self, req_time=1, tol=0.01):
         consecutive_time = rospy.Duration(0.0)
         start_time = rospy.Time.now()
 
         while not rospy.is_shutdown():
-            # x_safe, x_nom = self._get_states()
-            # u_nom = self._quad_lqr_controller(x_nom)
-            # self._send_attitude_setpoint(u_nom)
-            self.quad_pose_pub.publish(self.takeoff_pose)
+            x_safe, x_nom = self._get_states()
+            u_nom = self._quad_lqr_controller(x_nom)
+            self._send_attitude_setpoint(u_nom)
             
             # Get the position of the pendulum
             quad_pose = self.quad_cb.get_xyz_pose()
@@ -306,9 +303,8 @@ class NCBFTrackingNode:
         while not rospy.is_shutdown():
             # # Keep the quadrotor at this pose!
             x_safe, x_nom = self._get_states()
-            u_torque = self._quad_lqr_controller(x_nom)
-            u_body = self.torque_LQR.torque_to_body_rate(u_torque)
-            self._send_attitude_setpoint(u_body)
+            u_nom = self._quad_lqr_controller(x_nom)
+            self._send_attitude_setpoint(u_nom)
             
             link_state = LinkState()
             link_state.pose.position.x = -0.001995
@@ -347,9 +343,8 @@ class NCBFTrackingNode:
                                         )
                     set_link_properties_service(new_pend_properties)
                     x_safe, x_nom = self._get_states()
-                    u_torque = self._quad_lqr_controller(x_nom)
-                    u_bdoy = self.torque_LQR.torque_to_body_rate(u_torque)
-                    self._send_attitude_setpoint(u_bdoy) 
+                    u_nom = self._quad_lqr_controller(x_nom)
+                    self._send_attitude_setpoint(u_nom) 
                     # rospy.sleep(0.5)
                     return True
             else:
@@ -366,21 +361,20 @@ class NCBFTrackingNode:
         safe_input_log = np.zeros((self.nu, num_itr))
         error_log = np.zeros((self.torque_LQR.nx, num_itr))
         status_log = np.zeros((1, num_itr))
-        phi_val_log = np.zeros((1, num_itr))
 
         ##### Takeoff Sequence #####0411_193906-Real
         self._takeoff_sequence()
         
-        ##### Pendulum Mounting #####
-        if self.mode == "real":
-            # Sleep for 5 seconds so that pendulum can be mounted
-            # rospy.loginfo("Sleeping for 5 seconds to mount the pendulum.")
-            # Keep the pendulum upright
-            rospy.loginfo("Keeping the pendulum upright.")
-            self._pend_upright_real(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
-        elif self.mode == "sim":
-            rospy.loginfo("Swing the pendulum upright.")
-            self._pend_upright_sim(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
+        # ##### Pendulum Mounting #####
+        # if self.mode == "real":
+        #     # Sleep for 5 seconds so that pendulum can be mounted
+        #     # rospy.loginfo("Sleeping for 5 seconds to mount the pendulum.")
+        #     # Keep the pendulum upright
+        #     rospy.loginfo("Keeping the pendulum upright.")
+        #     self._pend_upright_real(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
+        # elif self.mode == "sim":
+        #     rospy.loginfo("Swing the pendulum upright.")
+        #     self._pend_upright_sim(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
         #      ##### Setting near origin & upright #####
         #     rospy.loginfo("Setting near origin & upright")
         #     for _ in range(350):
@@ -408,50 +402,49 @@ class NCBFTrackingNode:
                 break
             
             x_safe, x_nom = self._get_states()
-            pend_rs = self.pend_cb.get_rs_pose(vehicle_pose=x_nom[10:12].flatten())
+            # pend_rs = self.pend_cb.get_rs_pose(vehicle_pose=x_nom[6:8].flatten())
             
-            if pend_rs is None:
-                # self.quad_pose_pub.publish(self.takeoff_pose)
-                self.att_setpoint.header.stamp = rospy.Time.now()
-                self.att_setpoint.body_rate.x = 0    # np.clip(u[0], -20, 20)
-                self.att_setpoint.body_rate.y = 0    # np.clip(u[1], -20, 20)
-                self.att_setpoint.body_rate.z = 0    # np.clip(u[2], -20, 20)
-                self.att_setpoint.thrust = 0
-                self.quad_att_setpoint_pub.publish(self.att_setpoint)
-                rospy.loginfo_throttle(3,"Pendulum can't be seen. Continuing the control loop.")
-                self.rate.sleep()
-                continue
+            # if pend_rs is None:
+            #     # self.quad_pose_pub.publish(self.takeoff_pose)
+            #     self.att_setpoint.header.stamp = rospy.Time.now()
+            #     self.att_setpoint.body_rate.x = 0    # np.clip(u[0], -20, 20)
+            #     self.att_setpoint.body_rate.y = 0    # np.clip(u[1], -20, 20)
+            #     self.att_setpoint.body_rate.z = 0    # np.clip(u[2], -20, 20)
+            #     self.att_setpoint.thrust = 0
+            #     self.quad_att_setpoint_pub.publish(self.att_setpoint)
+            #     rospy.loginfo_throttle(3,"Pendulum can't be seen. Continuing the control loop.")
+            #     self.rate.sleep()
+            #     continue
 
             # rospy.loginfo_throttle(0.2, f"RS Norm: {np.linalg.norm(pend_rs)}")
                 
-            if np.linalg.norm(pend_rs) > 0.65:
-                # self._quad_lqr_controller()
-                # self.quad_pose_pub.publish(self.takeoff_pose)
-                rospy.loginfo_throttle(3,"Pendulum too far away. Exiting the control loop.")
-                self.rate.sleep()
-                continue
+            # if np.linalg.norm(pend_rs) > 0.65:
+            #     # self._quad_lqr_controller()
+            #     # self.quad_pose_pub.publish(self.takeoff_pose)
+            #     rospy.loginfo_throttle(3,"Pendulum too far away. Exiting the control loop.")
+            #     self.rate.sleep()
+            #     continue
             
-            u_torque = self._quad_lqr_controller(x_nom)
+            u_nom = self._quad_lqr_controller(x_nom)
             # IPython.embed()
-            u_safe, stat, phi_val = self.ncbf_cont.compute_control(x_safe, u_torque)
+            u_safe, stat = self.ncbf_cont.compute_control(x_safe, u_nom)
             # IPython.embed()
-            u_safe_body = self.torque_LQR.torque_to_body_rate(u_safe)
-            rospy.loginfo(f"Itr.{itr}/{num_itr}, U Safe: {u_safe_body}")
+            u_safe = self.torque_LQR.torque_to_body_rate(u_safe)
+            rospy.loginfo(f"Itr.{itr}/{num_itr}, U Safe: {u_safe}")
             
-            self._send_attitude_setpoint(u_safe_body)
+            self._send_attitude_setpoint(u_safe)
             
             # Log the state and input
             state_log[:, itr] = x_safe.flatten()
-            nom_input_log[:, itr] = u_torque.flatten()
+            nom_input_log[:, itr] = u_nom.flatten()
             safe_input_log[:, itr] = u_safe.flatten()
             error_log[:, itr] = (x_nom - self.torque_LQR.xgoal).flatten()
             status_log[:, itr] = stat
-            phi_val_log[:, itr] = phi_val
 
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, nom_input_log, safe_input_log, error_log, status_log, phi_val_log
+        return state_log, nom_input_log, safe_input_log, error_log, status_log
 
 
 if __name__ == "__main__":
@@ -544,7 +537,7 @@ if __name__ == "__main__":
         pend_upright_time=pend_upright_time, 
         pend_upright_tol=pend_upright_tol)
     
-    state_log, nom_input_log, safe_input_log, error_log, status_log, phi_val_log = ncbf_node.run(duration=cont_duration)
+    state_log, nom_input_log, safe_input_log, error_log, status_log = ncbf_node.run(duration=cont_duration)
     print("####################################################")
     print("## NCBF Tracking Node for Constant Position Over  ##")
     print("####################################################")
@@ -560,7 +553,7 @@ if __name__ == "__main__":
     # Get current date and time
     current_time = datetime.datetime.now()
     # Format the date and time into the desired filename format
-    formatted_time = current_time.strftime("%m%d_%H%M%S-nCBF-real")
+    formatted_time = current_time.strftime("%m%d_%H%M%S-nCBF-sim")
     directory_path = os.path.join(save_dir, formatted_time)
     os.makedirs(directory_path, exist_ok=True)
 
@@ -569,7 +562,6 @@ if __name__ == "__main__":
     np.save(os.path.join(directory_path, "safe_input.npy"), safe_input_log)
     np.save(os.path.join(directory_path, "error.npy"), error_log)
     np.save(os.path.join(directory_path, "status_log.npy"), status_log)
-    np.save(os.path.join(directory_path, "phi_val_log.npy"), phi_val_log)
     np.save(os.path.join(directory_path, "params.npy"), 
         {"mode": mode,
         "hz": hz,

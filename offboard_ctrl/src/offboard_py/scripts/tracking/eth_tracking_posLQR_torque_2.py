@@ -103,10 +103,10 @@ class ETHTrackingNode:
         # self.takeoff_goal = self.takeoff_cont.xgoal
         # self.takeoff_input = self.takeoff_cont.ugoal
         self.takeoff_K_inf = np.array([
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9904236594375369, 0.0, 0.0, 1.7209841208008192],
-            [1.4816729161221946, 0.0, 0.0, 0.2820508569413449, 0.0, 0.0, 0.0, -0.2645216194466015, 0.0, 0.0, -0.38713923609434187, 0.0],
-            [0.0, 1.452935447187532, 0.0, 0.0, 0.2765536175628985, 0.0, 0.2594151935758526, 0.0, 0.0, 0.37965637166446786, 0.0, 0.0],
-            [0.0, 0.0, 0.3980386245466367, 0.0, 0.0, 0.4032993897561105, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.990423659437537, 0.0, 0.0, 1.7209841208008194],
+            [1.4814681367499676, 0.002995481626744845, 0.005889427337762064, 0.28201313626232954, 0.0005738532722789398, 0.005981686140109121, 0.0005315334025884319, -0.2644839556489373, 0.0, 0.000779188657396088, -0.3870845425896414, 0.0],
+            [0.002995437953182237, 1.4528645588948705, 0.0034553424254151212, 0.0005738451434393372, 0.27654055987779025, 0.003509251033197913, 0.2594021552915394, -0.0005315255954541553, 0.0, 0.3796374382180433, -0.0007791772254469898, 0.0],
+            [0.03160126871064939, 0.018545750101093363, 0.39799289325860154, 0.006079664965265176, 0.003567296347199587, 0.4032536566450523, 0.003278753893103592, -0.005585886845822208, 0.0, 0.004811104113305738, -0.008196880671368846, 0.0]
         ])
 
         self.takeoff_goal = np.array([0, 0, 0, 0, 0, 0, 1, 1, self.takeoff_height, 0, 0, 0]).reshape((self.nx, 1))
@@ -133,34 +133,39 @@ class ETHTrackingNode:
         self._init_node()
         self.rate = rospy.Rate(self.hz)
 
+        self.body_rate_accum = np.zeros(3)
+
     def _init_node(self):
         rospy.init_node('eth_tracking_node', anonymous=True)
 
-    def _torque_to_body_rate(self, torque, xyz_ang_vel):
+    def _torque_to_body_rate(self, torque):
         body_rate = self.J_inv @ torque * self.dt
-        error = body_rate # - xyz_ang_vel
+        # error = body_rate
         
-        error_x = error[0]
-        error_y = error[1]
-        error_z = error[2]
+        self.body_rate_accum = self.body_rate_accum * 0.9 + body_rate.flatten() * 0.1 
+        # print(self.body_rate_accum)
+        # error_x = error[0]
+        # error_y = error[1]
+        # error_z = error[2]
 
-        px = self.gains_dict_px4_sim["MC_ROLLRATE_P"] * error_x
-        py = self.gains_dict_px4_sim["MC_PITCHRATE_P"] * error_y
-        pz = self.gains_dict_px4_sim["MC_YAWRATE_P"] * error_z
+        # px = self.gains_dict_px4_sim["MC_ROLLRATE_P"] * error_x
+        # py = self.gains_dict_px4_sim["MC_PITCHRATE_P"] * error_y
+        # pz = self.gains_dict_px4_sim["MC_YAWRATE_P"] * error_z
 
-        self.roll_int += self.gains_dict_px4_sim["MC_ROLLRATE_I"] * error_x * self.dt
-        self.pitch_int += self.gains_dict_px4_sim["MC_PITCHRATE_I"] * error_y * self.dt
-        self.yaw_int += self.gains_dict_px4_sim["MC_YAWRATE_I"] * error_z * self.dt
+        # self.roll_int += self.gains_dict_px4_sim["MC_ROLLRATE_I"] * error_x * self.dt
+        # self.pitch_int += self.gains_dict_px4_sim["MC_PITCHRATE_I"] * error_y * self.dt
+        # self.yaw_int += self.gains_dict_px4_sim["MC_YAWRATE_I"] * error_z * self.dt
 
-        ix = self.roll_int
-        iy = self.pitch_int
-        iz = self.yaw_int
+        # ix = self.roll_int
+        # iy = self.pitch_int
+        # iz = self.yaw_int
         
-        dx = self.gains_dict_px4_sim["MC_ROLLRATE_D"] * error_x/self.dt
-        dy = self.gains_dict_px4_sim["MC_PITCHRATE_D"] * error_y/self.dt
-        dz = self.gains_dict_px4_sim["MC_YAWRATE_D"] * error_z/self.dt
+        # dx = self.gains_dict_px4_sim["MC_ROLLRATE_D"] * error_x/self.dt
+        # dy = self.gains_dict_px4_sim["MC_PITCHRATE_D"] * error_y/self.dt
+        # dz = self.gains_dict_px4_sim["MC_YAWRATE_D"] * error_z/self.dt
 
-        return np.array([px + ix + dx, py + iy + dy, pz + iz + dz])
+        # return np.array([px + ix + dx, py + iy + dy, pz + iz + dz])
+        return self.body_rate_accum
 
 
     def _quad_lqr_controller(self):
@@ -188,7 +193,7 @@ class ETHTrackingNode:
         # self.prev_u = u_J_inv
 
         # u_body_rates = self.u_P * u_J_inv + self.u_int + u_D
-        u_body_rates = self._torque_to_body_rate(u[1:].reshape((3,1)), quad_xyz_ang_vel.reshape((3,1)))
+        u_body_rates = self._torque_to_body_rate(u[1:].reshape((3,1)))
         
         self.att_setpoint.body_rate.x = u_body_rates[0]
         self.att_setpoint.body_rate.y = u_body_rates[1]
@@ -433,7 +438,6 @@ class ETHTrackingNode:
             #     # pend_rs_vel = self.pend_cb.get_rs_vel(vehicle_vel=quad_xyz_vel)
             #     pend_rs_vel = np.array([0, 0])
 
-
             # # State Vector
             # x = np.concatenate((quad_xyz.T, quad_xyz_vel.T, quad_zyx_ang.T, pend_rs.T, pend_rs_vel.T))
             # x = x.reshape((self.nx, 1))
@@ -473,7 +477,7 @@ if __name__ == "__main__":
     
     ##### Argparse #####
     parser = argparse.ArgumentParser(description="ETH Tracking Node for Constant Position")
-    parser.add_argument("--mode", type=str, default="sim", help="Mode of operation (sim or real)")
+    parser.add_argument("--mode", type=str, default="real", help="Mode of operation (sim or real)")
     parser.add_argument("--hz", type=int, default=90, help="Frequency of the control loop")
     parser.add_argument("--track_type", type=str, default="constant", help="Type of tracking to be used")
     # parser.add_argument("--mass", type=float, default=0.73578, help="Mass of the quadrotor + pendulum (in kg)")

@@ -24,7 +24,7 @@ from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeReq
 from geometry_msgs.msg import PoseStamped, Quaternion, Vector3, TwistStamped
 from std_msgs.msg import Header
 
-from src.controllers.eth_constant_controller_torque import ConstantPositionTracker
+from src.controllers.torque_constant_position_tracker import ConstantPositionTracker
 from src.callbacks.fcu_state_callbacks import VehicleStateCB
 from src.callbacks.pend_state_callbacks import PendulumCB
 from src.callbacks.fcu_modes import FcuModes

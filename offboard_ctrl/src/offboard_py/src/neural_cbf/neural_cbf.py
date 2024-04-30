@@ -40,7 +40,7 @@ class NeuralCBF(nn.Module):
 		self.ci_min = 1e-2
 		self.k0_min = 1e-2
 
-		print("At initialization: k0 is %f" % self.k0.item())
+		# print("At initialization: k0 is %f" % self.k0.item())
 		#############################################################
 		self.net_reshape_h = self._create_net()
 

@@ -1,3 +1,4 @@
+import IPython
 import rospy
 import math
 import numpy as np
@@ -13,7 +14,11 @@ class PendulumCB:
     def __init__(self, mode, L_p=0.69) -> None:
         self.pose = PoseStamped()
         self.prev_pose = PoseStamped()
+        self.prev_pend_ang = np.array([0, 0])
+        
         self.avg_vel = np.array([0, 0])
+        self.avg_pend_vel = np.array([0, 0])
+        
         self.w_avg = 0.5
 
         if mode == 'sim':
@@ -86,23 +91,39 @@ class PendulumCB:
     
     def get_rs_ang(self, vehicle_pose=None):
         rs_pose = self.get_rs_pose(vehicle_pose)
+        # try:
         xi = np.sqrt(self.L_p**2 - rs_pose[0]**2 - rs_pose[1]**2)
+        # except RuntimeWarning:
+        #     IPython.embed()
         roll = np.arctan2(rs_pose[1], xi)       # Roll is about the x-axis. Thus, use y and z.
         pitch = np.arctan2(rs_pose[0], xi)      # Pitch is about the y-axis. Thus, use x and z.
         return np.array([roll, pitch])
 
-    def get_rs_ang_vel(self, vehicle_pose=None, vehicle_vel=None):
-        rs_ang = self.get_rs_ang(vehicle_pose)
+    # def get_rs_ang_vel(self, vehicle_pose=None):
+    #     rs_ang = self.get_rs_ang(vehicle_pose)
         
-        current_time = self.pose.header.stamp.to_sec()
-        prev_time = self.prev_pose.header.stamp.to_sec()
-        dt = current_time - prev_time
-        if dt < 1e-5:
-            print("Time difference is too small!")
-            return np.array([0, 0])
-        roll_dot = ...          ### NOTE: NOT IMPLEMENTED!!!
-        pitch_dot = ...         ### NOTE: NOT IMPLEMENTED!!!
-        return np.array([roll_dot, pitch_dot])
+    #     # current_time = self.pose.header.stamp.to_sec()
+    #     # prev_time = self.prev_pose.header.stamp.to_sec()
+    #     # dt = current_time - prev_time
+    #     # if dt < 1e-5:
+    #     #     print("Time difference is too small!")
+    #     #     return np.array([0, 0])
+    #     rs_ang_vel = (rs_ang - self.prev_pend_ang) / (1/90)
+    #     self.prev_pend_ang = rs_ang
+    #     self.avg_pend_vel = (1 - self.w_avg)*rs_ang_vel + self.w_avg*self.avg_pend_vel
+    #     return self.avg_pend_vel
+
+    def get_rs_ang_vel(self, vehicle_pose=None, vehicle_vel=None):
+        rs_vel = self.get_rs_vel(vehicle_vel)
+        
+        # current_time = self.pose.header.stamp.to_sec()
+        # prev_time = self.prev_pose.header.stamp.to_sec()
+        # dt = current_time - prev_time
+        # if dt < 1e-5:
+        #     print("Time difference is too small!")
+        #     return np.array([0, 0])
+        rs_ang_vel = self.L_p * rs_vel.flatten()
+        return np.array([rs_ang_vel[1], rs_ang_vel[0]])
     
     def get_rs_vel(self, vehicle_vel=None, dt=None):
         if self.mode == 'sim':
@@ -149,7 +170,7 @@ class PendulumCB:
 
         # rospy.loginfo(f"Velocity: r: {r}, s: {s}")
         # rospy.loginfo(f"Avg.Vel.: r: {self.avg_vel[0]}, s: {self.avg_vel[1]}")
-        return self.avg_vel - vehicle_vel[:2].reshape((2,1))
+        return self.avg_vel - vehicle_vel[:2]
     
 
 if __name__ == "__main__":

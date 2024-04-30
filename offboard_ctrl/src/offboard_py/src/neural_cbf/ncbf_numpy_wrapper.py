@@ -8,8 +8,9 @@ from torch.autograd import grad
 
 class NCBFNumpy:
     """ Originally `PhiNumpy` """
-    def __init__(self, torch_phi_fn):
+    def __init__(self, torch_phi_fn, device):
         self.torch_phi_fn = torch_phi_fn
+        self.device = device
 
     def set_params(self, state_dict):
         # TODO: probably should have some checks on this
@@ -21,16 +22,18 @@ class NCBFNumpy:
 
     def _x_numpy_to_x_torch(self, x):
         # Slice off translational states, if they are present
-        if len(x.shape) == 1:
+        if len(x.shape) == 2:
             x = np.reshape(x, (1, -1))
         x = x[:, :10]
 
         # Wrap-around on cyclical angles
+        # IPython.embed()
+        
         ind_cyclical = [0, 1, 2, 6, 7]
         for i in ind_cyclical:
             x[:, i] = self._convert_angle_to_negpi_pi_interval(x[:, i])
 
-        x_torch = torch.from_numpy(x.astype("float32"))
+        x_torch = torch.from_numpy(x.astype("float32")).to(self.device)
         # Q: how come we don't have to involve device = gpu?
         # A: because it is set as CPU elsewhere? Yes
 

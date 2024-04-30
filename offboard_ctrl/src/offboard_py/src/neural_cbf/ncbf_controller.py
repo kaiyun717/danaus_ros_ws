@@ -13,7 +13,6 @@ class NCBFController:
     def __init__(self, 
                     env, 
                     cbf_fn, 
-                    nom_controller,
                     param_dict, 
                     eps_bdry=1.0, 
                     eps_outside=5.0):
@@ -89,37 +88,52 @@ class NCBFController:
         # on_boundary = False
         # outside_boundary = False
         ################
-
+        # IPython.embed()
+        # if len(x.shape) == 2:
+        u_ref_old = np.copy(u_ref)
+        u_ref[0] = (u_ref[0] - g) * self.M
+        print(f"{u_ref_old[0]=}, {u_ref[0]=}")
+        x = np.reshape(x, (1, -1))
+        
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree
         phi_grad = self.cbf_fn.phi_grad(x)
 
+        # IPython.embed()
+
 		# print(x.shape)
-		# x_next = x + self.env.dt * self.env.x_dot_open_loop_model(x, self.compute_u_ref(t, x))  # in the absence of safe control, the next state
-        x_next = self.env.rk4_x_dot_open_loop_model(x, u_ref)    # RK4 Implementation
-        next_phi_val = self.cbf_fn.phi_fn(x_next)
+        # x_next = self.env.rk4_x_dot_open_loop_model(x, u_ref)    # RK4 Implementation
+        # next_phi_val = self.cbf_fn.phi_fn(x_next)
 
         # dist_between_xs = np.linalg.norm(x_next - x)
         # phi_grad_mag = np.linalg.norm(phi_grad)
 
-        if phi_vals[0, -1] > 0:  # Outside
-            # print("STATUS: Outside") # TODO
+        if phi_vals[0, -1] > 1e-2:  # Outside
+            print("STATUS: Outside") # TODO
             eps = self.eps_outside
+            stat = 0
             # apply_u_safe = True
             # outside_boundary = True
-        elif phi_vals[0, -1] < 0 and next_phi_val[0, -1] >= 0:  # On boundary. Note: cheating way to convert DT to CT
-            # print("STATUS: On") # TODO
-            eps = self.eps_bdry
-            # apply_u_safe = True
+        # elif phi_vals[0, -1] < 0 and next_phi_val[0, -1] >= 0:  # On boundary. Note: cheating way to convert DT to CT
+        #     print("STATUS: On") # TODO
+        #     eps = self.eps_bdry
+        #     stat = 1
+        #     # apply_u_safe = True
             # on_boundary = True
+        elif phi_vals[0, -1] < 1e-2 and phi_vals[0, -1] > -1e-2:  # On boundary. Note: cheating way to convert DT to CT
+            print("STATUS: On") # TODO
+            eps = self.eps_bdry
+            stat = 1
+        
         else:  # Inside
-            # print("STATUS: Inside") # TODO
+            print("STATUS: Inside") # TODO
+            stat = 2
             # apply_u_safe = False
             # inside_boundary = True
             # debug_dict = {"apply_u_safe": apply_u_safe, "u_ref": u_ref, "qp_slack": qp_slack, "qp_rhs": qp_rhs,
             #                 "qp_lhs": qp_lhs, "phi_vals": phi_vals.flatten(), "impulses": impulses,
             #                 "inside_boundary": inside_boundary, "on_boundary": on_boundary, "outside_boundary": outside_boundary, 
             #                 "dist_between_xs": dist_between_xs, "phi_grad_mag": phi_grad_mag, "phi_grad": phi_grad}
-            return u_ref
+            return u_ref_old, stat, phi_vals[0, -1]
 
         # IPython.embed()
         # Compute the control constraints
@@ -158,22 +172,24 @@ class NCBFController:
         P = np.zeros((9, 9))
         P[:4, :4] = 2 *np.eye(4)
         q = np.zeros((9, 1))
-        q[:4, 0] = -2*u_ref
+        q[:4, 0] = -2*u_ref.flatten()
         q[-1, 0] = w
 
         # G <= h
-        G = np.zeros((10,9))
+        G = np.zeros((11,9))
         G[0, :4] = lhs
         G[0, -1] = -1.0
         ##
         G[1:5, 4:8] = -np.eye(4)
         G[5:9, 4:8] = np.eye(4)
         G[9, -1] = -1.0
+        G[10, 0] = -1.0 # Thrust constraint
 
         h = np.zeros((10, 1))
         h[0, 0] = rhs
         ##
         h[5:9, 0] = 1.0
+        h[9, 0] = 0.1*self.M*g
 
         A = np.zeros((4, 9))
         A[:4, :4] = -np.eye(4)
@@ -197,6 +213,7 @@ class NCBFController:
         sol_var = np.array(sol_obj['x'])
 
         u_safe = sol_var[0:4]
+        u_safe[0] = u_safe[0]/self.M + g
         u_safe = np.reshape(u_safe, (4))
         # qp_slack = sol_var[-1]
 
@@ -206,4 +223,4 @@ class NCBFController:
         # debug_dict = {"apply_u_safe": apply_u_safe, "u_ref": u_ref, "phi_vals": phi_vals.flatten(),
         #               "qp_slack": qp_slack, "qp_rhs": qp_rhs, "qp_lhs": qp_lhs.flatten(), "impulses": impulses.flatten(),
         #              "inside_boundary": inside_boundary, "on_boundary": on_boundary, "outside_boundary": outside_boundary, "dist_between_xs": dist_between_xs, "phi_grad_mag": phi_grad_mag, "phi_grad": phi_grad.flatten()}
-        return u_safe
+        return u_safe, stat, phi_vals[0, -1]

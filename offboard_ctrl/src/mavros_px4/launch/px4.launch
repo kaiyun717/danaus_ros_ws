@@ -4,7 +4,8 @@
 
 	<!-- <arg name="fcu_url" default="udp://0.0.0.0:14550@192.168.4.1:14555" /> -->
 	<!-- <arg name="fcu_url" default="udp://0.0.0.0:14550@172.26.188.30:14555" /> -->
-	<arg name="fcu_url" default="udp://0.0.0.0:14550@192.168.3.112:14555" />
+	<arg name="fcu_url" default="udp://0.0.0.0:14550@192.168.3.152:14550" /> 
+	<!-- <arg name="fcu_url" default="tcp://:5760@192.168.3.152@5760" /> -->
 	<!-- <arg name="fcu_url" default="/dev/ttyACM0:57600" /> -->
 	<arg name="gcs_url" default="" />
 	<arg name="tgt_system" default="1" />
