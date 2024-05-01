@@ -2,6 +2,8 @@ import numpy as np
 import math
 from cvxopt import matrix, solvers
 
+from quadprog import solve_qp
+
 solvers.options['show_progress'] = False
 import IPython
 import control
@@ -76,23 +78,9 @@ class NCBFController:
         #     self.K = K
 
     def compute_control(self, x, u_ref):
-        ############ Init log vars
-        # apply_u_safe = None
-        # u_ref = self.compute_u_ref(x)
-        # phi_vals = None
-        # qp_slack = None
-        # qp_lhs = None
-        # qp_rhs = None
-        # impulses = None
-        # inside_boundary = False
-        # on_boundary = False
-        # outside_boundary = False
-        ################
-        # IPython.embed()
-        # if len(x.shape) == 2:
         u_ref_old = np.copy(u_ref)
+        
         u_ref[0] = (u_ref[0] - g) * self.M
-        print(f"{u_ref_old[0]=}, {u_ref[0]=}")
         x = np.reshape(x, (1, -1))
         
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree
@@ -101,28 +89,21 @@ class NCBFController:
         # IPython.embed()
 
 		# print(x.shape)
-        # x_next = self.env.rk4_x_dot_open_loop_model(x, u_ref)    # RK4 Implementation
-        # next_phi_val = self.cbf_fn.phi_fn(x_next)
-
-        # dist_between_xs = np.linalg.norm(x_next - x)
-        # phi_grad_mag = np.linalg.norm(phi_grad)
+        x_next = self.env.rk4_x_dot_open_loop_model(x, u_ref)    # RK4 Implementation
+        next_phi_val = self.cbf_fn.phi_fn(x_next)
 
         if phi_vals[0, -1] > 1e-2:  # Outside
             print("STATUS: Outside") # TODO
             eps = self.eps_outside
             stat = 0
-            # apply_u_safe = True
-            # outside_boundary = True
-        # elif phi_vals[0, -1] < 0 and next_phi_val[0, -1] >= 0:  # On boundary. Note: cheating way to convert DT to CT
-        #     print("STATUS: On") # TODO
-        #     eps = self.eps_bdry
-        #     stat = 1
-        #     # apply_u_safe = True
-            # on_boundary = True
-        elif phi_vals[0, -1] < 1e-2 and phi_vals[0, -1] > -1e-2:  # On boundary. Note: cheating way to convert DT to CT
+        elif phi_vals[0, -1] < 0 and next_phi_val[0, -1] >= 0:  # On boundary. Note: cheating way to convert DT to CT
             print("STATUS: On") # TODO
             eps = self.eps_bdry
             stat = 1
+        # elif phi_vals[0, -1] < 1e-2 and phi_vals[0, -1] > -1e-2:  # On boundary. Note: cheating way to convert DT to CT
+        #     print("STATUS: On") # TODO
+        #     eps = self.eps_bdry
+        #     stat = 1
         
         else:  # Inside
             print("STATUS: Inside") # TODO
@@ -146,28 +127,9 @@ class NCBFController:
         rhs = -phi_grad.T @ f_x - eps
         rhs = rhs.item()  # scalar, not numpy array
 
-        # Saving data
-        qp_lhs = lhs
-        qp_rhs = rhs
-
         # Computing control using QP
         # Note, constraint may not always be satisfied, so we include a slack variable on the CBF input constraint
         w = 1000.0  # slack weight
-
-        # P = np.zeros((5, 5))
-        # P[:4, :4] = 2 * self.mixer.T @ self.mixer
-        # q = np.concatenate([-2 * u_ref.T @ self.mixer, np.array([w])])
-        # q = np.reshape(q, (-1, 1))
-        #
-        # G = np.zeros((10, 5))
-        # G[0, 0:4] = lhs @ self.mixer
-        # G[0, 4] = -1.0
-        # G[1:5, 0:4] = -np.eye(4)
-        # G[5:9, 0:4] = np.eye(4)
-        # G[-1, -1] = -1.0
-        #
-        # h = np.concatenate([np.array([rhs]), np.zeros(4), np.ones(4), np.zeros(1)])
-        # h = np.reshape(h, (-1, 1))
 
         P = np.zeros((9, 9))
         P[:4, :4] = 2 *np.eye(4)
@@ -176,20 +138,18 @@ class NCBFController:
         q[-1, 0] = w
 
         # G <= h
-        G = np.zeros((11,9))
+        G = np.zeros((10,9))
         G[0, :4] = lhs
         G[0, -1] = -1.0
         ##
         G[1:5, 4:8] = -np.eye(4)
         G[5:9, 4:8] = np.eye(4)
         G[9, -1] = -1.0
-        G[10, 0] = -1.0 # Thrust constraint
 
         h = np.zeros((10, 1))
         h[0, 0] = rhs
         ##
         h[5:9, 0] = 1.0
-        h[9, 0] = 0.1*self.M*g
 
         A = np.zeros((4, 9))
         A[:4, :4] = -np.eye(4)
@@ -200,8 +160,8 @@ class NCBFController:
         # IPython.embed()
 
         try:
-            # sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h))
-            sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h), matrix(A), matrix(b))
+            sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h))
+            # sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h), matrix(A), matrix(b))#, solver='mosek')
         except:
             # IPython.embed()
             print("QP solve was unsuccessful, with status: %s " % sol_obj["status"])
