@@ -90,7 +90,6 @@ class ETHTrackingNode:
             "MC_YAWRATE_I": 0.11,
             "MC_YAWRATE_D": 0.0,
         }
-        
 
         ### Goal Position ###
         takeoff_pose = np.array([0, 0, self.takeoff_height])
@@ -103,10 +102,10 @@ class ETHTrackingNode:
         # self.takeoff_goal = self.takeoff_cont.xgoal
         # self.takeoff_input = self.takeoff_cont.ugoal
         self.takeoff_K_inf = np.array([
-            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.990423659437537, 0.0, 0.0, 1.7209841208008194],
-            [1.4814681367499676, 0.002995481626744845, 0.005889427337762064, 0.28201313626232954, 0.0005738532722789398, 0.005981686140109121, 0.0005315334025884319, -0.2644839556489373, 0.0, 0.000779188657396088, -0.3870845425896414, 0.0],
-            [0.002995437953182237, 1.4528645588948705, 0.0034553424254151212, 0.0005738451434393372, 0.27654055987779025, 0.003509251033197913, 0.2594021552915394, -0.0005315255954541553, 0.0, 0.3796374382180433, -0.0007791772254469898, 0.0],
-            [0.03160126871064939, 0.018545750101093363, 0.39799289325860154, 0.006079664965265176, 0.003567296347199587, 0.4032536566450523, 0.003278753893103592, -0.005585886845822208, 0.0, 0.004811104113305738, -0.008196880671368846, 0.0]
+            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9904236594375369, 0.0, 0.0, 1.7209841208008192],
+            [1.4816729161221946, 0.0, 0.0, 0.2820508569413449, 0.0, 0.0, 0.0, -0.2645216194466015, 0.0, 0.0, -0.38713923609434187, 0.0],
+            [0.0, 1.452935447187532, 0.0, 0.0, 0.2765536175628985, 0.0, 0.2594151935758526, 0.0, 0.0, 0.37965637166446786, 0.0, 0.0],
+            [0.0, 0.0, 0.3980386245466367, 0.0, 0.0, 0.4032993897561105, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         ])
 
         self.takeoff_goal = np.array([0, 0, 0, 0, 0, 0, 1, 1, self.takeoff_height, 0, 0, 0]).reshape((self.nx, 1))
@@ -142,31 +141,9 @@ class ETHTrackingNode:
         body_rate = self.J_inv @ torque * self.dt
         # error = body_rate
         
-        self.body_rate_accum = self.body_rate_accum * 0.9 + body_rate.flatten() * 0.1 
-        # print(self.body_rate_accum)
-        # error_x = error[0]
-        # error_y = error[1]
-        # error_z = error[2]
-
-        # px = self.gains_dict_px4_sim["MC_ROLLRATE_P"] * error_x
-        # py = self.gains_dict_px4_sim["MC_PITCHRATE_P"] * error_y
-        # pz = self.gains_dict_px4_sim["MC_YAWRATE_P"] * error_z
-
-        # self.roll_int += self.gains_dict_px4_sim["MC_ROLLRATE_I"] * error_x * self.dt
-        # self.pitch_int += self.gains_dict_px4_sim["MC_PITCHRATE_I"] * error_y * self.dt
-        # self.yaw_int += self.gains_dict_px4_sim["MC_YAWRATE_I"] * error_z * self.dt
-
-        # ix = self.roll_int
-        # iy = self.pitch_int
-        # iz = self.yaw_int
-        
-        # dx = self.gains_dict_px4_sim["MC_ROLLRATE_D"] * error_x/self.dt
-        # dy = self.gains_dict_px4_sim["MC_PITCHRATE_D"] * error_y/self.dt
-        # dz = self.gains_dict_px4_sim["MC_YAWRATE_D"] * error_z/self.dt
-
-        # return np.array([px + ix + dx, py + iy + dy, pz + iz + dz])
+        self.body_rate_accum = self.body_rate_accum * 0.1 + body_rate.flatten() * 0.9
+        # self.body_rate_accum = body_rate.flatten()
         return self.body_rate_accum
-
 
     def _quad_lqr_controller(self):
         quad_xyz = self.quad_cb.get_xyz_pose()
@@ -202,6 +179,8 @@ class ETHTrackingNode:
         self.att_setpoint.thrust = (u[0]/(9.81)) * self.hover_thrust
         self.att_setpoint.thrust = np.clip(self.att_setpoint.thrust, 0.0, 1.0)
         self.quad_att_setpoint_pub.publish(self.att_setpoint) 
+
+        return x, u, u_body_rates
 
     def _takeoff_sequence(self):
         
@@ -265,136 +244,24 @@ class ETHTrackingNode:
         
         rospy.loginfo("Takeoff pose achieved!")
 
-    def _pend_upright_real(self, req_time=0.5, tol=0.05):
-        consecutive_time = rospy.Duration(0.0)
-        start_time = rospy.Time.now()
-
-        while not rospy.is_shutdown():
-            self._quad_lqr_controller()
-            
-            # Get the position of the pendulum
-            quad_pose = self.quad_cb.get_xyz_pose()
-            pendulum_position = self.pend_cb.get_rs_pose(vehicle_pose=quad_pose)
-
-            # Calculate the norm of the position
-            position_norm = np.linalg.norm(pendulum_position)
-
-            # Check if the norm is less than 0.05m
-            if position_norm < tol:
-                rospy.loginfo("Pendulum upright for {} seconds.".format(consecutive_time.to_sec()))
-                consecutive_time += rospy.Time.now() - start_time
-                if consecutive_time >= rospy.Duration(req_time):
-                    rospy.loginfo("Pendulum position has been less than 0.05m for 0.5 seconds straight.")
-                    return True
-            else:
-                consecutive_time = rospy.Duration(0.0)
-                start_time = rospy.Time.now()
-
-            self.rate.sleep()
-    
-    def _pend_upright_sim(self, req_time=0.5, tol=0.05):
-        get_link_properties_service = rospy.ServiceProxy('/gazebo/get_link_properties', GetLinkProperties)
-        self.set_link_state_service = rospy.ServiceProxy('/gazebo/set_link_state', SetLinkState)
-        set_link_properties_service = rospy.ServiceProxy('/gazebo/set_link_properties', SetLinkProperties)
-
-        consecutive_time = rospy.Duration(0.0)
-        start_time = rospy.Time.now()
-
-        while not rospy.is_shutdown():
-            # # Keep the quadrotor at this pose!
-            # self.quad_pose_pub.publish(self.takeoff_pose)  
-            self._quad_lqr_controller(thrust_ratio=0.45)     # This is better than takeoff_pose
-            
-            link_state = LinkState()
-            link_state.pose.position.x = -0.001995
-            link_state.pose.position.y = 0.000135
-            link_state.pose.position.z = 0.531659
-            link_state.link_name = 'danaus12_pend::pendulum'
-            link_state.reference_frame = 'base_link'
-            _ = self.set_link_state_service(link_state)
-
-            # Get the position of the pendulum
-            quad_xyz = self.quad_cb.get_xyz_pose()
-            pendulum_position = self.pend_cb.get_rs_pose(vehicle_pose=quad_xyz)
-
-            # Calculate the norm of the position
-            position_norm = np.linalg.norm(pendulum_position)
-
-            # Check if the norm is less than 0.05m
-            if position_norm < tol:
-                consecutive_time += rospy.Time.now() - start_time
-                if consecutive_time >= rospy.Duration(req_time):
-                    rospy.loginfo("Pendulum position has been less than 0.05m for 0.5 seconds straight.")
-                    
-                    # Turn gravity on!
-                    curr_pend_properties = get_link_properties_service(link_name='danaus12_pend::pendulum')
-                    new_pend_properties = SetLinkPropertiesRequest(
-                                            link_name='danaus12_pend::pendulum',
-                                            gravity_mode=True,
-                                            com=curr_pend_properties.com,
-                                            mass=curr_pend_properties.mass,
-                                            ixx=curr_pend_properties.ixx,
-                                            ixy=curr_pend_properties.ixy,
-                                            ixz=curr_pend_properties.ixz,
-                                            iyy=curr_pend_properties.iyy,
-                                            iyz=curr_pend_properties.iyz,
-                                            izz=curr_pend_properties.izz
-                                        )
-                    set_link_properties_service(new_pend_properties)
-                    self._quad_lqr_controller(thrust_ratio=0.47) 
-                    # rospy.sleep(0.5)
-                    return True
-            else:
-                consecutive_time = rospy.Duration(0.0)
-                start_time = rospy.Time.now()
-
-            self.rate.sleep()
-
     def run(self, duration):
         # Log Array
         num_itr = int(duration * self.hz)
         state_log = np.zeros((self.nx, num_itr))
         input_log = np.zeros((self.nu, num_itr))
+        body_rates_log = np.zeros((3, num_itr))
         error_log = np.zeros((self.nx, num_itr))
 
         ##### Takeoff Sequence #####
         self._takeoff_sequence()
         
-        # ##### Pendulum Mounting #####
-        # if self.mode == "real":
-        #     # Sleep for 5 seconds so that pendulum can be mounted
-        #     # rospy.loginfo("Sleeping for 5 seconds to mount the pendulum.")
-
-        #     # Keep the pendulum upright
-        #     rospy.loginfo("Keeping the pendulum upright.")
-        #     self._pend_upright_real(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
-        # elif self.mode == "sim":
-        #     rospy.loginfo("Swing the pendulum upright.")
-        #     self._pend_upright_sim(req_time=self.pend_upright_time, tol=self.pend_upright_tol)
-        
-        # ##### Setting near origin & upright #####
-        # if self.mode == "sim":
-        #     rospy.loginfo("Setting near origin & upright")
-        #     for _ in range(150):
-        #         link_state = LinkState()
-        #         link_state.pose.position.x = -0.001995
-        #         link_state.pose.position.y = 0.000135
-        #         link_state.pose.position.z = 0.531659
-        #         link_state.link_name = 'danaus12_pend::pendulum'
-        #         link_state.reference_frame = 'base_link'
-        #         _ = self.set_link_state_service(link_state)
-                
-        #         # self.quad_pose_pub.publish(self.takeoff_pose)
-        #         self._quad_lqr_controller(thrust_ratio=0.46)     # This is better than takeoff_pose
-        # else:
-        #     pass
         
         ##### Pendulum Position Control #####
         rospy.loginfo("Starting the constant position control!")
         start_time = rospy.Time.now()
 
         # for itr in range(int(1e10)):  # If you want to test with console.
-        for itr in range(int(10e10)):
+        for itr in range(num_itr):
             if rospy.is_shutdown():
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
@@ -461,23 +328,27 @@ class ETHTrackingNode:
             # # self.quad_pose_pub.publish(self.takeoff_pose)
             
             # # Log the state and input
-            # state_log[:, itr] = x.flatten()
-            # input_log[:, itr] = u.flatten()
-            # error_log[:, itr] = (x - self.xgoal).flatten()
-            
-            self._quad_lqr_controller()
+            x, u, body_rates = self._quad_lqr_controller()
 
+            rospy.loginfo("Thrust: {}".format(u[0]))
+            rospy.loginfo("Body Rates: {}".format(body_rates))
+
+            state_log[:, itr] = x.flatten()
+            input_log[:, itr] = u.flatten()
+            body_rates_log[:, itr] = body_rates.flatten()
+            error_log[:, itr] = (x - self.takeoff_goal).flatten()
+            
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, input_log, error_log
+        return state_log, input_log, body_rates_log, error_log
 
 
 if __name__ == "__main__":
     
     ##### Argparse #####
     parser = argparse.ArgumentParser(description="ETH Tracking Node for Constant Position")
-    parser.add_argument("--mode", type=str, default="real", help="Mode of operation (sim or real)")
+    parser.add_argument("--mode", type=str, default="sim", help="Mode of operation (sim or real)")
     parser.add_argument("--hz", type=int, default=90, help="Frequency of the control loop")
     parser.add_argument("--track_type", type=str, default="constant", help="Type of tracking to be used")
     # parser.add_argument("--mass", type=float, default=0.73578, help="Mass of the quadrotor + pendulum (in kg)")
@@ -515,7 +386,7 @@ if __name__ == "__main__":
                                pend_upright_time=pend_upright_time, 
                                pend_upright_tol=pend_upright_tol)
     
-    state_log, input_log, error_log = eth_node.run(duration=cont_duration)
+    state_log, input_log, body_rates_log, error_log = eth_node.run(duration=cont_duration)
 
     print("#####################################################")
     print("### ETH Tracking Node for Constant Position Over  ###")
@@ -532,12 +403,13 @@ if __name__ == "__main__":
     # Get current date and time
     current_time = datetime.datetime.now()
     # Format the date and time into the desired filename format
-    formatted_time = current_time.strftime("%m%d_%H%M%S-Real")
+    formatted_time = current_time.strftime("%m%d_%H%M%S-1_to_9_Conversion-Sim")
     directory_path = os.path.join(save_dir, formatted_time)
     os.makedirs(directory_path, exist_ok=True)
 
     np.save(os.path.join(directory_path, "state.npy"), state_log)
     np.save(os.path.join(directory_path, "input.npy"), input_log)
+    np.save(os.path.join(directory_path, "body_rates.npy"), body_rates_log)
     np.save(os.path.join(directory_path, "error.npy"), error_log)
     np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
 
