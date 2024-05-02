@@ -31,6 +31,7 @@ class NCBFController:
         m_s = self.m_s
         max_thrust = self.max_thrust
         min_thrust = self.min_thrust
+        print(f"{max_thrust=}")
 
         M = np.array([
             [1, 1, 1, 1], 
@@ -40,47 +41,10 @@ class NCBFController:
 		
         self.mixer = M * max_thrust		# normalize to max thrust so that it has max_thrust when v = 1
 
-        # if self.args.rollout_u_ref == "LQR":
-        #     L_p = param_dict["L_p"]
-        #     M = param_dict["M"]
-        #     # J_x = param_dict["J_x"]
-        #     # J_y = param_dict["J_y"]
-        #     # J_z = param_dict["J_z"]
-
-        #     A = np.zeros((10, 10))  # 10 x 10
-        #     A[0:3, 3:6] = np.eye(3)
-        #     A[6:8, 8:10] = np.eye(2)
-        #     A[8, 0] = -3 * g / (2 * L_p)
-        #     A[9, 1] = -3 * g / (2 * L_p)
-        #     A[8, 6] = 3 * g / (2 * L_p)
-        #     A[9, 7] = 3 * g / (2 * L_p)
-
-        #     B = np.zeros((10, 4))
-
-        #     # J = torch.tensor([
-        #     # 	[self.J_xx, self.J_xy, self.J_xz],
-        #     # 	[self.J_xy, self.J_yy, self.J_yz],
-        #     # 	[self.J_xz, self.J_yz, self.J_zz]]).to(self.device)
-        #     # norm_torques = u[:, 1:]@torch.inverse(J)
-        #     J_inv = np.array([
-        #         [305.7518,  -0.6651,  -5.3547],
-        #         [ -0.6651, 312.6261,  -3.1916],
-        #         [ -5.3547,  -3.1916, 188.9651]])
-
-        #     B[3:6, 1:4] = J_inv
-
-        #     # Use LQR to compute feedback portion of controller
-        #     q = self.args.rollout_LQR_q
-        #     r = self.args.rollout_LQR_r
-        #     Q = q * np.eye(10)
-        #     R = r * np.eye(4)
-        #     K, S, E = control.lqr(A, B, Q, R)
-        #     self.K = K
-
     def compute_control(self, x, u_ref):
-        u_ref_old = np.copy(u_ref)
+        u_ref_old = np.copy(u_ref)  # 9.75
         
-        u_ref[0] = (u_ref[0] - g) * self.M
+        u_ref[0] = (u_ref[0] - g) * self.M  # -0.065
         x = np.reshape(x, (1, -1))
         
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree
@@ -108,12 +72,6 @@ class NCBFController:
         else:  # Inside
             print("STATUS: Inside") # TODO
             stat = 2
-            # apply_u_safe = False
-            # inside_boundary = True
-            # debug_dict = {"apply_u_safe": apply_u_safe, "u_ref": u_ref, "qp_slack": qp_slack, "qp_rhs": qp_rhs,
-            #                 "qp_lhs": qp_lhs, "phi_vals": phi_vals.flatten(), "impulses": impulses,
-            #                 "inside_boundary": inside_boundary, "on_boundary": on_boundary, "outside_boundary": outside_boundary, 
-            #                 "dist_between_xs": dist_between_xs, "phi_grad_mag": phi_grad_mag, "phi_grad": phi_grad}
             return u_ref_old, stat, phi_vals[0, -1]
 
         # IPython.embed()
@@ -175,12 +133,5 @@ class NCBFController:
         u_safe = sol_var[0:4]
         u_safe[0] = u_safe[0]/self.M + g
         u_safe = np.reshape(u_safe, (4))
-        # qp_slack = sol_var[-1]
-
-        # impulses = sol_var[4:8]
-
-        # print("cbf controller qp_slack: ", qp_slack)
-        # debug_dict = {"apply_u_safe": apply_u_safe, "u_ref": u_ref, "phi_vals": phi_vals.flatten(),
-        #               "qp_slack": qp_slack, "qp_rhs": qp_rhs, "qp_lhs": qp_lhs.flatten(), "impulses": impulses.flatten(),
-        #              "inside_boundary": inside_boundary, "on_boundary": on_boundary, "outside_boundary": outside_boundary, "dist_between_xs": dist_between_xs, "phi_grad_mag": phi_grad_mag, "phi_grad": phi_grad.flatten()}
+        
         return u_safe, stat, phi_vals[0, -1]

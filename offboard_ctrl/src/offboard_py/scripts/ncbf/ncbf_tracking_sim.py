@@ -132,34 +132,17 @@ class NCBFTrackingNode:
                             [1.0498346060574577,0.0,0.0,0.08111887959217115,0.0,0.0,3.1249612183719218,0.0,0.8390135195024693,0.0,0.0,0.2439310793798623,0.0,0.0,0.3542763507641887,0.0,],
                             [0.0,1.0368611054298649,0.0,0.0,0.07970485761038303,0.0,0.0,-3.1048038968779004,0.0,-0.8337170169504385,-0.24373748893808928,0.0,0.0,-0.3536063529300743,0.0,0.0,],
                             [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,],])
-                gains_dict_px4 = {"MC_PITCHRATE_P": 0.138,
-                                  "MC_PITCHRATE_I": 0.168,
-                                  "MC_PITCHRATE_D": 0.0028,
-                                  "MC_ROLLRATE_P": 0.094,
-                                  "MC_ROLLRATE_I": 0.118,
-                                  "MC_ROLLRATE_D": 0.0017,
-                                  "MC_YAWRATE_P": 0.1,
-                                  "MC_YAWRATE_I": 0.11,
-                                  "MC_YAWRATE_D": 0.0}
-                self.torque_LQR = TorqueConstantPositionTracker(K_inf, takeoff_pose, gains_dict_px4, self.dt)
+                # self.torque_LQR = TorqueConstantPositionTracker(K_inf, takeoff_pose, self.dt)
+                self.torque_LQR = TorqueLQR(L, Q, R, takeoff_pose, self.dt, lqr_cont_type, num_itr=lqr_itr, K_inf=K_inf)
             elif self.lqr_cont_type == "without_pend":
-                K_inf = np.array([
-                            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.990423659437537, 0.0, 0.0, 1.7209841208008194],
-                            [1.4814681367499676, 0.002995481626744845, 0.005889427337762064, 0.28201313626232954, 0.0005738532722789398, 0.005981686140109121, 0.0005315334025884319, -0.2644839556489373, 0.0, 0.000779188657396088, -0.3870845425896414, 0.0],
-                            [0.002995437953182237, 1.4528645588948705, 0.0034553424254151212, 0.0005738451434393372, 0.27654055987779025, 0.003509251033197913, 0.2594021552915394, -0.0005315255954541553, 0.0, 0.3796374382180433, -0.0007791772254469898, 0.0],
-                            [0.03160126871064939, 0.018545750101093363, 0.39799289325860154, 0.006079664965265176, 0.003567296347199587, 0.4032536566450523, 0.003278753893103592, -0.005585886845822208, 0.0, 0.004811104113305738, -0.008196880671368846, 0.0]
-                        ])
-                gains_dict_px4 = {"MC_PITCHRATE_P": 0.138,
-                                  "MC_PITCHRATE_I": 0.168,
-                                  "MC_PITCHRATE_D": 0.0028,
-                                  "MC_ROLLRATE_P": 0.094,
-                                  "MC_ROLLRATE_I": 0.118,
-                                  "MC_ROLLRATE_D": 0.0017,
-                                  "MC_YAWRATE_P": 0.1,
-                                  "MC_YAWRATE_I": 0.11,
-                                  "MC_YAWRATE_D": 0.0}
-                self.torque_LQR = TorqueConstantPositionTracker(K_inf, takeoff_pose, gains_dict_px4, self.dt)
-                
+                # K_inf = np.array([
+                #             [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.990423659437537, 0.0, 0.0, 1.7209841208008194],
+                #             [1.4814681367499676, 0.002995481626744845, 0.005889427337762064, 0.28201313626232954, 0.0005738532722789398, 0.005981686140109121, 0.0005315334025884319, -0.2644839556489373, 0.0, 0.000779188657396088, -0.3870845425896414, 0.0],
+                #             [0.002995437953182237, 1.4528645588948705, 0.0034553424254151212, 0.0005738451434393372, 0.27654055987779025, 0.003509251033197913, 0.2594021552915394, -0.0005315255954541553, 0.0, 0.3796374382180433, -0.0007791772254469898, 0.0],
+                #             [0.03160126871064939, 0.018545750101093363, 0.39799289325860154, 0.006079664965265176, 0.003567296347199587, 0.4032536566450523, 0.003278753893103592, -0.005585886845822208, 0.0, 0.004811104113305738, -0.008196880671368846, 0.0]
+                #         ])
+                # self.torque_LQR = TorqueConstantPositionTracker(K_inf, takeoff_pose, self.dt)
+                self.torque_LQR = TorqueLQR(L, Q, R, takeoff_pose, self.dt, lqr_cont_type, num_itr=lqr_itr)
         else:
             raise NotImplementedError("Circular tracking not implemented.")
 
@@ -183,8 +166,8 @@ class NCBFTrackingNode:
         rospy.init_node('eth_tracking_node', anonymous=True)
 
     def _quad_lqr_controller(self, x):
-        u_nom = self.torque_LQR.torque_body_rate_inputs(x)
-        return u_nom
+        u_torque = self.torque_LQR.torque_inputs(x)
+        return u_torque
 
     def _send_attitude_setpoint(self, u):
         """ u[0]: Thrust, u[1]: Roll, u[2]: Pitch, u[3]: Yaw """
@@ -209,7 +192,7 @@ class NCBFTrackingNode:
         x_safe = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, pend_ang.T, pend_ang_vel.T, quad_xyz.T, quad_xyz_vel.T))
         x_safe = x_safe.reshape((self.nx, 1))
 
-        x_nom = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, quad_xyz.T, quad_xyz_vel.T))
+        x_nom = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, pend_ang.T, pend_ang_vel.T,quad_xyz.T, quad_xyz_vel.T))
         x_nom = x_nom.reshape((self.torque_LQR.nx, 1))
         return x_safe, x_nom
 
@@ -361,6 +344,7 @@ class NCBFTrackingNode:
         safe_input_log = np.zeros((self.nu, num_itr))
         error_log = np.zeros((self.torque_LQR.nx, num_itr))
         status_log = np.zeros((1, num_itr))
+        phi_val_log = np.zeros((1, num_itr))
 
         ##### Takeoff Sequence #####0411_193906-Real
         self._takeoff_sequence()
@@ -425,26 +409,26 @@ class NCBFTrackingNode:
             #     self.rate.sleep()
             #     continue
             
-            u_nom = self._quad_lqr_controller(x_nom)
-            # IPython.embed()
-            u_safe, stat = self.ncbf_cont.compute_control(x_safe, u_nom)
-            # IPython.embed()
-            u_safe = self.torque_LQR.torque_to_body_rate(u_safe)
-            rospy.loginfo(f"Itr.{itr}/{num_itr}, U Safe: {u_safe}")
+            u_torque = self._quad_lqr_controller(x_nom) # 9.75
             
-            self._send_attitude_setpoint(u_safe)
+            u_safe, stat, phi_val = self.ncbf_cont.compute_control(x_safe, np.copy(u_torque))
+            u_safe_body = self.torque_LQR.torque_to_body_rate(u_safe)
+            rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Safe: {u_safe_body.flatten()}\nU Nom: {u_torque.flatten()}\nPhi: {phi_val}, Status\n{stat}")
+
+            self._send_attitude_setpoint(u_safe_body)
             
             # Log the state and input
             state_log[:, itr] = x_safe.flatten()
-            nom_input_log[:, itr] = u_nom.flatten()
+            nom_input_log[:, itr] = u_torque.flatten()
             safe_input_log[:, itr] = u_safe.flatten()
             error_log[:, itr] = (x_nom - self.torque_LQR.xgoal).flatten()
             status_log[:, itr] = stat
+            phi_val_log[:, itr] = phi_val
 
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, nom_input_log, safe_input_log, error_log, status_log
+        return state_log, nom_input_log, safe_input_log, error_log, status_log, phi_val_log
 
 
 if __name__ == "__main__":
@@ -498,8 +482,8 @@ if __name__ == "__main__":
         # R = 1.0 * np.diag([100, 100, 0.01, 0.9])
 
         Q = 1.0 * np.diag([3, 3, 2, 0.005, 0.005, 0.0, 0.0, 0.0, 0.0, 10, 10, 0.0001, 0.0001])      # With pendulum
-        # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
-        R = 1.0 * np.diag([10, 10, 1, 1])
+        Q = np.diag([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10, 10, 0.0001, 0.0001, 3, 3, 2, 0.005, 0.005, 0.0])      # With pendulum
+        R = 1.0 * np.diag([1, 10, 10, 1])
 
         # Q = 1.0 * np.diag([4, 4, 2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 16, 16, 0.4, 0.4])      # With pendulum
         # # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
@@ -508,23 +492,6 @@ if __name__ == "__main__":
         # Q = 1.0 * np.diag([2, 2, 2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2, 2, 0, 0])      # With pendulum
         # # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
         # R = 1.0 * np.diag([70, 70, 1, 1])
-    else:
-        # Qx = np.diag([0.3, 0, 0, 3, 0])
-        # Rx = np.diag([6.5])
-        # Qy = np.diag([0.3, 0, 0, 3, 0])
-        # Ry = np.diag([6.5])
-        # Qz = np.diag([2, 0])
-        # Rz = np.diag([1])
-
-        Qx = np.diag([2, 0, 0, 2, 0])
-        Rx = np.diag([7])
-        Qy = np.diag([2, 0, 0, 2, 0])
-        Ry = np.diag([7])
-        Qz = np.diag([2, 0])
-        Rz = np.diag([1])
-
-        Q = [Qx, Qy, Qz]
-        R = [Rx, Ry, Rz]
         
     ncbf_node = NCBFTrackingNode(
         exp_name=exp_name, ckpt_num=ckpt_num,
@@ -537,7 +504,7 @@ if __name__ == "__main__":
         pend_upright_time=pend_upright_time, 
         pend_upright_tol=pend_upright_tol)
     
-    state_log, nom_input_log, safe_input_log, error_log, status_log = ncbf_node.run(duration=cont_duration)
+    state_log, nom_input_log, safe_input_log, error_log, status_log, phi_val_log = ncbf_node.run(duration=cont_duration)
     print("####################################################")
     print("## NCBF Tracking Node for Constant Position Over  ##")
     print("####################################################")
@@ -562,6 +529,7 @@ if __name__ == "__main__":
     np.save(os.path.join(directory_path, "safe_input.npy"), safe_input_log)
     np.save(os.path.join(directory_path, "error.npy"), error_log)
     np.save(os.path.join(directory_path, "status_log.npy"), status_log)
+    np.save(os.path.join(directory_path, "phi_val_log.npy"), phi_val_log)
     np.save(os.path.join(directory_path, "params.npy"), 
         {"mode": mode,
         "hz": hz,
