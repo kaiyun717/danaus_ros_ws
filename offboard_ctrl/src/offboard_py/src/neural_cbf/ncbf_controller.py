@@ -41,10 +41,12 @@ class NCBFController:
 		
         self.mixer = M * max_thrust		# normalize to max thrust so that it has max_thrust when v = 1
 
+        self.M = 0.740  # mass of the quadrotor
+
     def compute_control(self, x, u_ref):
-        u_ref_old = np.copy(u_ref)  # 9.75
+        u_ref_old = np.copy(u_ref)
         
-        u_ref[0] = (u_ref[0] - g) * self.M  # -0.065
+        u_ref[0] = (u_ref[0] - g) * self.M 
         x = np.reshape(x, (1, -1))
         
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree

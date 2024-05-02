@@ -22,7 +22,8 @@ class TorqueConstantPositionTracker:
         self.nx = self.K_inf.shape[1]    # Number of states
         self.nu = self.K_inf.shape[0]     # Number of inputs
 
-        self.xgoal = (np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0]))   
+        # self.xgoal = (np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0]))   
+        self.xgoal = (np.array([0, 0, 0, 0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0]))   
 
         self.xgoal = self.xgoal.reshape((self.nx, 1))
         self.ugoal = (np.array([self.g, 0, 0, 0]))
