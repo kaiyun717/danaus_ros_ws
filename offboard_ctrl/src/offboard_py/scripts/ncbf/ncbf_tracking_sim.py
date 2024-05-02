@@ -263,8 +263,8 @@ class NCBFTrackingNode:
         rospy.loginfo("Starting the constant position control!")
         start_time = rospy.Time.now()
 
-        for itr in range(int(1e10)):  # If you want to test with console.
-        # for itr in range(num_itr):
+        # for itr in range(int(1e10)):  # If you want to test with console.
+        for itr in range(num_itr):
             if rospy.is_shutdown():
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
@@ -282,13 +282,13 @@ class NCBFTrackingNode:
 
             self._send_attitude_setpoint(u_safe_body)
             
-            # # Log the state and input
-            # state_log[:, itr] = x_safe.flatten()
-            # nom_input_log[:, itr] = u_torque.flatten()
-            # safe_input_log[:, itr] = u_safe.flatten()
-            # error_log[:, itr] = (x_nom - self.torque_LQR.xgoal).flatten()
-            # status_log[:, itr] = stat
-            # phi_val_log[:, itr] = phi_val
+            # Log the state and input
+            state_log[:, itr] = x_safe.flatten()
+            nom_input_log[:, itr] = u_torque.flatten()
+            safe_input_log[:, itr] = u_safe.flatten()
+            error_log[:, itr] = (x_nom - self.torque_LQR.xgoal).flatten()
+            status_log[:, itr] = stat
+            phi_val_log[:, itr] = phi_val
 
             self.rate.sleep()
 
@@ -414,7 +414,13 @@ if __name__ == "__main__":
         "ckpt_num": ckpt_num,
         "eps_bdry": eps_bdry,
         "eps_outside": eps_outside,
-        "dynamics_noise_spread": dynamics_noise_spread})
+        "dynamics_noise_spread": dynamics_noise_spread,
+        "K_inf": np.array([
+                            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.9904236594375369, 0.0, 0.0, 1.7209841208008192],
+                            [1.4816729161221946, 0.0, 0.0, 0.2820508569413449, 0.0, 0.0, 0.0, -0.2645216194466015, 0.0, 0.0, -0.38713923609434187, 0.0],
+                            [0.0, 1.452935447187532, 0.0, 0.0, 0.2765536175628985, 0.0, 0.2594151935758526, 0.0, 0.0, 0.37965637166446786, 0.0, 0.0],
+                            [0.0, 0.0, 0.3980386245466367, 0.0, 0.0, 0.4032993897561105, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        ])})
 
     print("#####################################################")
     print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
