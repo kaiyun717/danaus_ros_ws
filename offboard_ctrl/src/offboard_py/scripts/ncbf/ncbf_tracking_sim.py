@@ -280,23 +280,23 @@ class NCBFTrackingNode:
             x_safe, x_nom = self._get_states()
             
             u_torque = self._quad_lqr_controller(x_nom)
-            u_body = self.torque_LQR.torque_to_body_rate(u_torque)
-            self._send_attitude_setpoint(u_body)
-            rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Nom: {u_torque.flatten()}")
+            # u_body = self.torque_LQR.torque_to_body_rate(u_torque)
+            # self._send_attitude_setpoint(u_body)
+            # rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Nom: {u_torque.flatten()}")
 
             u_safe, stat, phi_val = self.ncbf_cont.compute_control(x_safe, np.copy(u_torque))
-            # u_safe_body = self.torque_LQR.torque_to_body_rate(u_safe)
-            # rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Safe: {u_safe.flatten()}\nU Nom: {u_torque.flatten()}\nPhi: {phi_val}, Status\n{stat}")
+            u_safe_body = self.torque_LQR.torque_to_body_rate(u_safe)
+            rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Safe: {u_safe.flatten()}\nU Nom: {u_torque.flatten()}\nPhi: {phi_val}, Status\n{stat}")
 
-            # self._send_attitude_setpoint(u_safe_body)
+            self._send_attitude_setpoint(u_safe_body)
             
             # Log the state and input
             state_log[:, itr] = x_safe.flatten()
             nom_input_log[:, itr] = u_torque.flatten()
-            # safe_input_log[:, itr] = u_safe.flatten()
+            safe_input_log[:, itr] = u_safe.flatten()
             error_log[:, itr] = (x_nom - self.torque_LQR.xgoal).flatten()
             xgoal_log[:, itr] = self.torque_LQR.xgoal.flatten()
-            # status_log[:, itr] = stat
+            status_log[:, itr] = stat
             phi_val_log[:, itr] = phi_val
 
             self.rate.sleep()
