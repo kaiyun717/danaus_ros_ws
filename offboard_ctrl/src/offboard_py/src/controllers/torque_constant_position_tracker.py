@@ -23,11 +23,15 @@ class TorqueConstantPositionTracker:
         self.nu = self.K_inf.shape[0]     # Number of inputs
 
         # self.xgoal = (np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0]))   
-        self.xgoal = (np.array([0, 0, 0, 0, 0, 0, 1, 1, xyz_goal[2], 0, 0, 0]))   
+        self.xgoal = (np.array([0, 0, 0, 0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0]))   
 
         self.xgoal = self.xgoal.reshape((self.nx, 1))
         self.ugoal = (np.array([self.g, 0, 0, 0]))
         self.ugoal = self.ugoal.reshape((self.nu, 1))
+
+    def update_goal(self, xyz_goal):
+        self.xgoal = (np.array([0, 0, 0, 0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0]))   
+        self.xgoal = self.xgoal.reshape((self.nx, 1))
     
     def torque_body_rate_inputs(self, x):
         """

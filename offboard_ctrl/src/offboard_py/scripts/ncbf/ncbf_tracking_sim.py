@@ -253,6 +253,7 @@ class NCBFTrackingNode:
         nom_input_log = np.zeros((self.nu, num_itr))
         safe_input_log = np.zeros((self.nu, num_itr))
         error_log = np.zeros((self.torque_LQR.nx, num_itr))
+        xgoal_log = np.zeros((self.torque_LQR.nx, num_itr))
         status_log = np.zeros((1, num_itr))
         phi_val_log = np.zeros((1, num_itr))
 
@@ -263,12 +264,19 @@ class NCBFTrackingNode:
         rospy.loginfo("Starting the constant position control!")
         start_time = rospy.Time.now()
 
+        traj_goals = np.array([[2, 2, self.takeoff_height], [2, -2, self.takeoff_height], [-2, -2, self.takeoff_height], [-2, 2, self.takeoff_height]])
+
         # for itr in range(int(1e10)):  # If you want to test with console.
         for itr in range(num_itr):
             if rospy.is_shutdown():
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
             
+            # Update goal
+            if itr % 100 == 0:
+                self.torque_LQR.update_goal(traj_goals[(itr//100) % len(traj_goals)])
+                rospy.loginfo(f"Goal updated to: {self.torque_LQR.xgoal.flatten()}")
+
             x_safe, x_nom = self._get_states()
             
             u_torque = self._quad_lqr_controller(x_nom)
@@ -287,13 +295,14 @@ class NCBFTrackingNode:
             nom_input_log[:, itr] = u_torque.flatten()
             # safe_input_log[:, itr] = u_safe.flatten()
             error_log[:, itr] = (x_nom - self.torque_LQR.xgoal).flatten()
+            xgoal_log[:, itr] = self.torque_LQR.xgoal.flatten()
             # status_log[:, itr] = stat
             # phi_val_log[:, itr] = phi_val
 
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, nom_input_log, safe_input_log, error_log, status_log, phi_val_log
+        return state_log, nom_input_log, safe_input_log, error_log, xgoal_log, status_log, phi_val_log
 
 
 if __name__ == "__main__":
@@ -373,7 +382,7 @@ if __name__ == "__main__":
         pend_upright_time=pend_upright_time, 
         pend_upright_tol=pend_upright_tol)
     
-    state_log, nom_input_log, safe_input_log, error_log, status_log, phi_val_log = ncbf_node.run(duration=cont_duration)
+    state_log, nom_input_log, safe_input_log, error_log, xgoal_log, status_log, phi_val_log = ncbf_node.run(duration=cont_duration)
     print("####################################################")
     print("## NCBF Tracking Node for Constant Position Over  ##")
     print("####################################################")
@@ -397,6 +406,7 @@ if __name__ == "__main__":
     np.save(os.path.join(directory_path, "nom_input.npy"), nom_input_log)
     np.save(os.path.join(directory_path, "safe_input.npy"), safe_input_log)
     np.save(os.path.join(directory_path, "error.npy"), error_log)
+    np.save(os.path.join(directory_path, "xgoal.npy"), xgoal_log)
     np.save(os.path.join(directory_path, "status_log.npy"), status_log)
     np.save(os.path.join(directory_path, "phi_val_log.npy"), phi_val_log)
     np.save(os.path.join(directory_path, "params.npy"), 
