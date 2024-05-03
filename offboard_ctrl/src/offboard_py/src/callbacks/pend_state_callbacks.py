@@ -91,12 +91,11 @@ class PendulumCB:
     
     def get_rs_ang(self, vehicle_pose=None):
         rs_pose = self.get_rs_pose(vehicle_pose)
-        # try:
-        xi = np.sqrt(self.L_p**2 - rs_pose[0]**2 - rs_pose[1]**2)
-        # except RuntimeWarning:
-        #     IPython.embed()
-        roll = np.arctan2(rs_pose[1], xi)       # Roll is about the x-axis. Thus, use y and z.
-        pitch = np.arctan2(rs_pose[0], xi)      # Pitch is about the y-axis. Thus, use x and z.
+        # xi = np.sqrt(self.L_p**2 - rs_pose[0]**2 - rs_pose[1]**2)
+        # roll = np.arctan2(rs_pose[1], xi)       # Roll is about the x-axis. Thus, use y and z.
+        # pitch = np.arctan2(rs_pose[0], xi)      # Pitch is about the y-axis. Thus, use x and z.
+        roll = rs_pose[1] / self.L_p 
+        pitch = rs_pose[0] / self.L_p
         return np.array([roll, pitch])
 
     # def get_rs_ang_vel(self, vehicle_pose=None):
@@ -122,7 +121,7 @@ class PendulumCB:
         # if dt < 1e-5:
         #     print("Time difference is too small!")
         #     return np.array([0, 0])
-        rs_ang_vel = self.L_p * rs_vel.flatten()
+        rs_ang_vel = rs_vel.flatten()/self.L_p
         return np.array([rs_ang_vel[1], rs_ang_vel[0]])
     
     def get_rs_vel(self, vehicle_vel=None, dt=None):
