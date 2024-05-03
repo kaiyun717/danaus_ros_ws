@@ -412,8 +412,8 @@ if __name__ == "__main__":
     
     ##### Argparse #####
     parser = argparse.ArgumentParser(description="ETH Tracking Node for Constant Position")
-    parser.add_argument("--mode", type=str, default="sim", help="Mode of operation (sim or real)")
-    parser.add_argument("--hz", type=int, default=50, help="Frequency of the control loop")
+    parser.add_argument("--mode", type=str, default="real", help="Mode of operation (sim or real)")
+    parser.add_argument("--hz", type=int, default=90, help="Frequency of the control loop")
     parser.add_argument("--track_type", type=str, default="constant", help="Type of tracking to be used")
     # parser.add_argument("--mass", type=float, default=0.73578, help="Mass of the quadrotor + pendulum (in kg)")
     parser.add_argument("--mass", type=float, default=0.700, help="Mass of the quadrotor + pendulum (in kg)")
@@ -421,7 +421,7 @@ if __name__ == "__main__":
     parser.add_argument("--pend_upright_time", type=float, default=0.5, help="Time to keep the pendulum upright")
     parser.add_argument("--pend_upright_tol", type=float, default=0.05, help="Tolerance for pendulum relative position [r,z] (norm in meters)")
     parser.add_argument("--lqr_itr", type=int, default=100000, help="Number of iterations for Infinite-Horizon LQR")
-    parser.add_argument("--cont_duration", type=int, default=20, help="Duration for which the controller should run (in seconds)")
+    parser.add_argument("--cont_duration", type=int, default=60, help="Duration for which the controller should run (in seconds)")
 
     args = parser.parse_args()
     mode = args.mode
@@ -439,7 +439,7 @@ if __name__ == "__main__":
     print("#####################################################")
     print("")
     
-    L = 0.53            # x  y  z  x_dot y_dot z_dot yaw pitch roll r s r_dot s_dot
+    L = 0.69            # x  y  z  x_dot y_dot z_dot yaw pitch roll r s r_dot s_dot
     Q = 1.0 * np.diag([0.2, 0.2, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])      # With pendulum
     # Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
     R = 1.0 * np.diag([50, 50, 50, 1])
