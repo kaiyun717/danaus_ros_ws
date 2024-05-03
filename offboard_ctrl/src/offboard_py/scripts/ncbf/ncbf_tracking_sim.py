@@ -264,7 +264,8 @@ class NCBFTrackingNode:
         rospy.loginfo("Starting the constant position control!")
         start_time = rospy.Time.now()
 
-        traj_goals = np.array([[2, 2, self.takeoff_height], [2, -2, self.takeoff_height], [-2, -2, self.takeoff_height], [-2, 2, self.takeoff_height]])
+        # traj_goals = np.array([[2, 2, self.takeoff_height], [2, -2, self.takeoff_height], [-2, -2, self.takeoff_height], [-2, 2, self.takeoff_height]])
+        traj_goals = np.array([[1, 1, self.takeoff_height]])
 
         # for itr in range(int(1e10)):  # If you want to test with console.
         for itr in range(num_itr):

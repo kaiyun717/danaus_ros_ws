@@ -1,3 +1,4 @@
+import time
 import scipy as sp
 import numpy as np
 import IPython
@@ -49,12 +50,36 @@ class NCBFNumpy:
         phi_numpy = phi_torch.detach().cpu().numpy()
 
         return phi_numpy
+    
+    # def phi_fn_and_grad(self, x):
+    #     """
+    #     :param x: (16)
+    #     :return: (r+1) where r is relative degree
+    #     """
+    #     x_torch = self._x_numpy_to_x_torch(x)
+    #     bs = x_torch.shape[0]
+    #     x_torch.requires_grad = True
+
+    #     phi_torch = self.torch_phi_fn(x_torch)
+    #     phi_val = torch.sum(phi_torch[:, -1])
+    #     phi_val.backward()
+    #     phi_grad = x_torch.grad
+
+    #     x_torch.requires_grad = False
+    #     phi_grad = phi_grad.detach().cpu().numpy()
+    #     phi_grad = np.concatenate((phi_grad, np.zeros((bs, 6))), axis=1)
+        
+    #     phi_numpy = phi_torch.detach().cpu().numpy()
+
+    #     return phi_numpy, phi_grad
 
     def phi_grad(self, x):
         """
         :param x: (16)
         :return: (16)
         """
+        self.torch_phi_fn.zero_grad()
+        
         x_torch = self._x_numpy_to_x_torch(x)
         bs = x_torch.shape[0]
         x_torch.requires_grad = True
@@ -62,13 +87,11 @@ class NCBFNumpy:
         # Compute phi grad
         phi_vals = self.torch_phi_fn(x_torch)
         phi_val = torch.sum(phi_vals[:, -1])
-        phi_grad = grad([phi_val], x_torch)[0]
+        phi_grad = grad([phi_val], x_torch)[0]    # NOTE: Original
 
-        # Post op
+        # Post operation
         x_torch.requires_grad = False
-        # phi_grad = phi_grad.detach().cpu().numpy().flatten()
-        # phi_grad = np.concatenate((phi_grad, np.zeros(6)))
-        # IPython.embed()
+
         phi_grad = phi_grad.detach().cpu().numpy()
         phi_grad = np.concatenate((phi_grad, np.zeros((bs, 6))), axis=1)
 

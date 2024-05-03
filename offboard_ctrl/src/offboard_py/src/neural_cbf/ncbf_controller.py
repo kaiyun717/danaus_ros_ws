@@ -1,3 +1,4 @@
+import time 
 import numpy as np
 import math
 from cvxopt import matrix, solvers
@@ -38,10 +39,14 @@ class NCBFController:
             [-r1*np.sin(angle), r2*np.sin(angle), r1*np.sin(angle), -r2*np.sin(angle)],
             [-r1*np.cos(angle), r2*np.cos(angle), -r1*np.cos(angle), r2*np.cos(angle)],
             [-m_s, -m_s, m_s, m_s]]) # mixer matrix
-		
         self.mixer = M * max_thrust		# normalize to max thrust so that it has max_thrust when v = 1
+        self.mixer_inv = np.array([
+            [ 0.06300014, -0.70380981, -0.92851892, -3.4426304 ],
+            [ 0.06199986,  0.70380981,  0.92851892, -3.3879707 ],
+            [ 0.06300014,  0.70380981, -0.92851892,  3.4426304 ],
+            [ 0.06199986, -0.70380981,  0.92851892,  3.3879707 ]])
 
-        self.M = 0.740  # mass of the quadrotor
+        self.M = 0.700  # mass of the quadrotor
 
     def compute_control(self, x, u_ref):
         u_ref_old = np.copy(u_ref)
@@ -49,14 +54,20 @@ class NCBFController:
         u_ref[0] = (u_ref[0] - g) * self.M 
         x = np.reshape(x, (1, -1))
         
+        # phi_start = time.time()
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree
-        phi_grad = self.cbf_fn.phi_grad(x)
+        # phi_end = time.time()
+        # print(f"Phi computation time: {phi_end - phi_start}")
 
-        # IPython.embed()
-
-		# print(x.shape)
+        # x_next_start = time.time()
         x_next = self.env.rk4_x_dot_open_loop_model(x, u_ref)    # RK4 Implementation
+        # x_next_end = time.time()
+        # print(f"x_next computation time: {x_next_end - x_next_start}")
+
+        # next_phi_start = time.time()
         next_phi_val = self.cbf_fn.phi_fn(x_next)
+        # next_phi_end = time.time()
+        # print(f"Next phi computation time: {next_phi_end - next_phi_start}")
 
         if phi_vals[0, -1] > 1e-2:  # Outside
             print("STATUS: Outside") # TODO
@@ -66,21 +77,32 @@ class NCBFController:
             print("STATUS: On") # TODO
             eps = self.eps_bdry
             stat = 1
-        # elif phi_vals[0, -1] < 1e-2 and phi_vals[0, -1] > -1e-2:  # On boundary. Note: cheating way to convert DT to CT
+        # elif phi_vals[0, -1] < 1e-3 and phi_vals[0, -1] > -1e-3:  # On boundary. Note: cheating way to convert DT to CT
         #     print("STATUS: On") # TODO
         #     eps = self.eps_bdry
         #     stat = 1
-        
         else:  # Inside
             print("STATUS: Inside") # TODO
             stat = 2
             return u_ref_old, stat, phi_vals[0, -1]
 
-        # IPython.embed()
         # Compute the control constraints
+        # f_x_start = time.time()
         f_x = self.env._f_model(x)
         f_x = np.reshape(f_x, (16, 1))
+        # f_x_end = time.time()
+        # print(f"f_x computation time: {f_x_end - f_x_start}")
+
+        # g_x_start = time.time()
         g_x = self.env._g_model(x)
+        # g_x_end = time.time()
+        # print(f"g_x computation time: {g_x_end - g_x_start}")
+
+        # phi_grad_start = time.time()
+        phi_grad = self.cbf_fn.phi_grad(x)
+        # print(f"Phi grad: {phi_grad}")
+        # phi_grad_end = time.time()
+        # print(f"Phi grad computation time: {phi_grad_end - phi_grad_start}")
 
         phi_grad = np.reshape(phi_grad, (16, 1))
         lhs = phi_grad.T @ g_x  # 1 x 4
@@ -120,7 +142,12 @@ class NCBFController:
         # IPython.embed()
 
         try:
-            sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h))
+            init_impulses = self.mixer_inv @ (u_ref - np.array([self.M*g, 0, 0, 0])[:, None])
+            initvals = {"x": matrix(np.concatenate((u_ref.flatten(), init_impulses.flatten(), np.array([0]))))}
+            # qp_solve_start = time.time()
+            sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h), initvals=initvals)
+            # qp_solve_end = time.time()
+            # print(f"QP solve time: {qp_solve_end - qp_solve_start}")
             # sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h), matrix(A), matrix(b))#, solver='mosek')
         except:
             # IPython.embed()

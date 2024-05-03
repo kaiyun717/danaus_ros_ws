@@ -100,16 +100,13 @@ class NCBFTrackingNode:
         print(f"Time taken for compute control for inside: {compute_end_time - compute_start_time}")
 
         outside_x = np.zeros((16,1))
-        outside_x[0] = np.pi/6
-        outside_x[1] = np.pi/6
+        outside_x[0] = np.pi/4
+        outside_x[1] = np.pi/4
         outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
         compute_start_time = time.time()
         u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
         compute_end_time = time.time()
         print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
-
-
-
 
         IPython.embed()
 

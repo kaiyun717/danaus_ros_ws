@@ -73,24 +73,6 @@ class ETHTrackingNode:
 
         self.hover_thrust = None
 
-        # self.u_P = 0.5
-        # self.u_I = 0.1
-        # self.u_D = 0.001
-        self.pitch_int = 0.0
-        self.roll_int = 0.0
-        self.yaw_int = 0.0
-        self.gains_dict_px4_sim = {
-            "MC_PITCHRATE_P": 0.138,
-            "MC_PITCHRATE_I": 0.168,
-            "MC_PITCHRATE_D": 0.0028,
-            "MC_ROLLRATE_P": 0.094,
-            "MC_ROLLRATE_I": 0.118,
-            "MC_ROLLRATE_D": 0.0017,
-            "MC_YAWRATE_P": 0.1,
-            "MC_YAWRATE_I": 0.11,
-            "MC_YAWRATE_D": 0.0,
-        }
-        
 
         ### Goal Position ###
         takeoff_pose = np.array([0, 0, self.takeoff_height])
@@ -191,7 +173,6 @@ class ETHTrackingNode:
         # return np.array([px + ix + dx, py + iy + dy, pz + iz + dz])
         return self.body_rate_accum
 
-
     def _quad_lqr_controller(self):
         quad_xyz = self.quad_cb.get_xyz_pose()
         quad_xyz_vel = self.quad_cb.get_xyz_velocity()
@@ -211,12 +192,6 @@ class ETHTrackingNode:
         u = self.takeoff_input - self.takeoff_K_inf @ (x - self.takeoff_goal)  # 0 - K * dx = +ve
 
         self.att_setpoint.header.stamp = rospy.Time.now()
-        # u_J_inv = self.J_inv @ u[1:].reshape((3,1)) * self.dt
-        # self.u_int += self.u_I * u_J_inv
-        # u_D = self.u_D * (u_J_inv - self.prev_u)/self.dt
-        # self.prev_u = u_J_inv
-
-        # u_body_rates = self.u_P * u_J_inv + self.u_int + u_D
         u_body_rates = self._torque_to_body_rate(u[1:].reshape((3,1)))
         
         self.att_setpoint.body_rate.x = u_body_rates[0]
@@ -244,12 +219,6 @@ class ETHTrackingNode:
         u = self.pend_input - self.pend_K_inf @ (x - self.pend_goal)  # 0 - K * dx = +ve
 
         self.att_setpoint.header.stamp = rospy.Time.now()
-        # u_J_inv = self.J_inv @ u[1:].reshape((3,1)) * self.dt
-        # self.u_int += self.u_I * u_J_inv
-        # u_D = self.u_D * (u_J_inv - self.prev_u)/self.dt
-        # self.prev_u = u_J_inv
-
-        # u_body_rates = self.u_P * u_J_inv + self.u_int + u_D
         u_body_rates = self._torque_to_body_rate(u[1:].reshape((3,1)))
         
         self.att_setpoint.body_rate.x = u_body_rates[0]
@@ -310,17 +279,6 @@ class ETHTrackingNode:
             self.hover_thrust = 0.39
 
         rospy.loginfo("Recorded hover thrust: {}".format(self.hover_thrust))
-
-        # if self.mode == "real":
-        #     quad_pose = self.quad_cb.get_xyz_pose()
-        #     while (not rospy.is_shutdown()) and (np.linalg.norm(target_pose - quad_pose) > 0.1):
-        #         self.quad_pose_pub.publish(self.takeoff_pose)
-        #         quad_pose = self.quad_cb.get_xyz_pose()
-        #         rospy.loginfo("Quad pose: {}".format(quad_pose))
-        #         self.rate.sleep()
-        # elif self.mode == "sim":
-        #     pass
-        
         rospy.loginfo("Takeoff pose achieved!")
 
     def _pend_upright_real(self, req_time=0.5, tol=0.05):
@@ -366,7 +324,7 @@ class ETHTrackingNode:
             link_state = LinkState()
             link_state.pose.position.x = -0.001995
             link_state.pose.position.y = 0.000135
-            link_state.pose.position.z = 0.531659
+            link_state.pose.position.z = 0.721659
             link_state.link_name = 'danaus12_pend::pendulum'
             link_state.reference_frame = 'base_link'
             _ = self.set_link_state_service(link_state)

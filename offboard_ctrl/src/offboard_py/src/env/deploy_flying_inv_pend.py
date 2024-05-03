@@ -207,12 +207,12 @@ class FlyingInvertedPendulumEnv:
         return rv
 
     def rk4_x_dot_open_loop_model(self, x, u):
-        # k1 = self.dt * self.x_dot_open_loop_model(x, u)
-        # k2 = self.dt * self.x_dot_open_loop_model(x + k1/2, u)
-        # k3 = self.dt * self.x_dot_open_loop_model(x + k2/2, u)
-        # k4 = self.dt * self.x_dot_open_loop_model(x + k3, u)
-        # return x + (k1 + 2*k2 + 2*k3 + k4)/6
-        return self.dt * self.x_dot_open_loop_model(x, u)
+        k1 = (self.dt * self.x_dot_open_loop_model(x, u)).reshape((1,-1))
+        k2 = (self.dt * self.x_dot_open_loop_model(x + k1/2, u)).reshape((1,-1))
+        k3 = (self.dt * self.x_dot_open_loop_model(x + k2/2, u)).reshape((1,-1))
+        k4 = (self.dt * self.x_dot_open_loop_model(x + k3, u)).reshape((1,-1))
+        return x + (k1 + 2*k2 + 2*k3 + k4)/6
+        # return self.dt * self.x_dot_open_loop_model(x, u)
 
     def x_dot_open_loop(self, x, u):
         # TODO: this is very hacky
