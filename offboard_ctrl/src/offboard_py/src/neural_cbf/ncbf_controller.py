@@ -3,7 +3,7 @@ import numpy as np
 import math
 from cvxopt import matrix, solvers
 
-from quadprog import solve_qp
+# from quadprog import solve_qp
 
 solvers.options['show_progress'] = False
 import IPython
@@ -54,20 +54,20 @@ class NCBFController:
         u_ref[0] = (u_ref[0] - g) * self.M 
         x = np.reshape(x, (1, -1))
         
-        # phi_start = time.time()
+        phi_start = time.time()
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree
-        # phi_end = time.time()
-        # print(f"Phi computation time: {phi_end - phi_start}")
+        phi_end = time.time()
+        print(f"Phi computation time: {phi_end - phi_start}")
 
-        # x_next_start = time.time()
+        x_next_start = time.time()
         x_next = self.env.rk4_x_dot_open_loop_model(x, u_ref)    # RK4 Implementation
-        # x_next_end = time.time()
-        # print(f"x_next computation time: {x_next_end - x_next_start}")
+        x_next_end = time.time()
+        print(f"x_next computation time: {x_next_end - x_next_start}")
 
-        # next_phi_start = time.time()
+        next_phi_start = time.time()
         next_phi_val = self.cbf_fn.phi_fn(x_next)
-        # next_phi_end = time.time()
-        # print(f"Next phi computation time: {next_phi_end - next_phi_start}")
+        next_phi_end = time.time()
+        print(f"Next phi computation time: {next_phi_end - next_phi_start}")
 
         if phi_vals[0, -1] > 1e-2:  # Outside
             print("STATUS: Outside") # TODO
@@ -87,22 +87,22 @@ class NCBFController:
             return u_ref_old, stat, phi_vals[0, -1]
 
         # Compute the control constraints
-        # f_x_start = time.time()
+        f_x_start = time.time()
         f_x = self.env._f_model(x)
         f_x = np.reshape(f_x, (16, 1))
-        # f_x_end = time.time()
-        # print(f"f_x computation time: {f_x_end - f_x_start}")
+        f_x_end = time.time()
+        print(f"f_x computation time: {f_x_end - f_x_start}")
 
-        # g_x_start = time.time()
+        g_x_start = time.time()
         g_x = self.env._g_model(x)
-        # g_x_end = time.time()
-        # print(f"g_x computation time: {g_x_end - g_x_start}")
+        g_x_end = time.time()
+        print(f"g_x computation time: {g_x_end - g_x_start}")
 
-        # phi_grad_start = time.time()
+        phi_grad_start = time.time()
         phi_grad = self.cbf_fn.phi_grad(x)
         # print(f"Phi grad: {phi_grad}")
-        # phi_grad_end = time.time()
-        # print(f"Phi grad computation time: {phi_grad_end - phi_grad_start}")
+        phi_grad_end = time.time()
+        print(f"Phi grad computation time: {phi_grad_end - phi_grad_start}")
 
         phi_grad = np.reshape(phi_grad, (16, 1))
         lhs = phi_grad.T @ g_x  # 1 x 4
@@ -142,12 +142,12 @@ class NCBFController:
         # IPython.embed()
 
         try:
-            init_impulses = self.mixer_inv @ (u_ref - np.array([self.M*g, 0, 0, 0])[:, None])
-            initvals = {"x": matrix(np.concatenate((u_ref.flatten(), init_impulses.flatten(), np.array([0]))))}
-            # qp_solve_start = time.time()
-            sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h), initvals=initvals)
-            # qp_solve_end = time.time()
-            # print(f"QP solve time: {qp_solve_end - qp_solve_start}")
+            # init_impulses = self.mixer_inv @ (u_ref - np.array([self.M*g, 0, 0, 0])[:, None])
+            # initvals = {"x": matrix(np.concatenate((u_ref.flatten(), init_impulses.flatten(), np.array([0]))))}
+            qp_solve_start = time.time()
+            sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h))#, initvals=initvals)
+            qp_solve_end = time.time()
+            print(f"QP solve time: {qp_solve_end - qp_solve_start}")
             # sol_obj = solvers.qp(matrix(P), matrix(q), matrix(G), matrix(h), matrix(A), matrix(b))#, solver='mosek')
         except:
             # IPython.embed()

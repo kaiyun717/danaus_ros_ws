@@ -9,33 +9,16 @@ import math
 import datetime
 
 import IPython
-import rospy
 import torch
 import numpy as np
 import scipy
 
 import argparse
 
-from tf.transformations import euler_from_quaternion, quaternion_from_euler
-
-from gazebo_msgs.srv import GetLinkProperties, SetLinkProperties, SetLinkState, SetLinkPropertiesRequest
-from gazebo_msgs.msg import LinkState
-
-from mavros_msgs.msg import State, AttitudeTarget
-from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeRequest
-from geometry_msgs.msg import PoseStamped, Quaternion, Vector3, TwistStamped
-from std_msgs.msg import Header
-
-from src.controllers.torque_constant_position_tracker import TorqueConstantPositionTracker
-from src.callbacks.fcu_state_callbacks import VehicleStateCB
-from src.callbacks.pend_state_callbacks import PendulumCB
-from src.callbacks.fcu_modes import FcuModes
-
 from src.neural_cbf.utils import load_phi_and_params
 from src.neural_cbf.ncbf_numpy_wrapper import NCBFNumpy
 from src.neural_cbf.ncbf_controller import NCBFController
 from src.env.deploy_flying_inv_pend import FlyingInvertedPendulumEnv
-from src.controllers.torque_lqr import TorqueLQR
 
 
 class NCBFTrackingNode:
@@ -131,156 +114,6 @@ class NCBFTrackingNode:
         self.pend_upright_time = pend_upright_time  # Time to keep the pendulum upright
         self.pend_upright_tol = pend_upright_tol    # Tolerance for pendulum relative position [r,z] (norm in meters)
 
-        ######################
-        #####   MAVROS   #####
-        ######################
-
-        ### Subscribers ###
-        self.quad_cb = VehicleStateCB(mode=self.mode)
-        self.pend_cb = PendulumCB(mode=self.mode)
-        ### Services ###
-        self.quad_modes = FcuModes()
-        ### Publishers ###
-        self.quad_pose_pub = rospy.Publisher("mavros/setpoint_position/local", PoseStamped, queue_size=10)
-        self.quad_att_setpoint_pub = rospy.Publisher("mavros/setpoint_raw/attitude", AttitudeTarget, queue_size=1)
-
-        self.hover_thrust = None
-
-        ######################
-        #####     LQR    #####
-        ######################
-
-        ### Goal Position ###
-        takeoff_pose = np.array([0, 0, self.takeoff_height])
-
-        ### Nominal Controller ###
-        if self.track_type == "constant":
-            if self.lqr_cont_type == "with_pend":
-                K_inf = np.array([
-                            [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.7024504701211454,0.0,0.0,1.1852851512706413,],
-                            [1.0498346060574577,0.0,0.0,0.08111887959217115,0.0,0.0,3.1249612183719218,0.0,0.8390135195024693,0.0,0.0,0.2439310793798623,0.0,0.0,0.3542763507641887,0.0,],
-                            [0.0,1.0368611054298649,0.0,0.0,0.07970485761038303,0.0,0.0,-3.1048038968779004,0.0,-0.8337170169504385,-0.24373748893808928,0.0,0.0,-0.3536063529300743,0.0,0.0,],
-                            [0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,],])
-                gains_dict_px4 = {"MC_PITCHRATE_P": 0.138,
-                                  "MC_PITCHRATE_I": 0.168,
-                                  "MC_PITCHRATE_D": 0.0028,
-                                  "MC_ROLLRATE_P": 0.094,
-                                  "MC_ROLLRATE_I": 0.118,
-                                  "MC_ROLLRATE_D": 0.0017,
-                                  "MC_YAWRATE_P": 0.1,
-                                  "MC_YAWRATE_I": 0.11,
-                                  "MC_YAWRATE_D": 0.0}
-                self.torque_LQR = TorqueConstantPositionTracker(K_inf, takeoff_pose, gains_dict_px4, self.dt)
-            elif self.lqr_cont_type == "without_pend":
-                K_inf = np.array([
-                            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.990423659437537, 0.0, 0.0, 1.7209841208008194],
-                            [1.4814681367499676, 0.002995481626744845, 0.005889427337762064, 0.28201313626232954, 0.0005738532722789398, 0.005981686140109121, 0.0005315334025884319, -0.2644839556489373, 0.0, 0.000779188657396088, -0.3870845425896414, 0.0],
-                            [0.002995437953182237, 1.4528645588948705, 0.0034553424254151212, 0.0005738451434393372, 0.27654055987779025, 0.003509251033197913, 0.2594021552915394, -0.0005315255954541553, 0.0, 0.3796374382180433, -0.0007791772254469898, 0.0],
-                            [0.03160126871064939, 0.018545750101093363, 0.39799289325860154, 0.006079664965265176, 0.003567296347199587, 0.4032536566450523, 0.003278753893103592, -0.005585886845822208, 0.0, 0.004811104113305738, -0.008196880671368846, 0.0]
-                        ])
-                gains_dict_px4 = {"MC_PITCHRATE_P": 0.138,
-                                  "MC_PITCHRATE_I": 0.168,
-                                  "MC_PITCHRATE_D": 0.0028,
-                                  "MC_ROLLRATE_P": 0.094,
-                                  "MC_ROLLRATE_I": 0.118,
-                                  "MC_ROLLRATE_D": 0.0017,
-                                  "MC_YAWRATE_P": 0.1,
-                                  "MC_YAWRATE_I": 0.11,
-                                  "MC_YAWRATE_D": 0.0}
-                self.torque_LQR = TorqueConstantPositionTracker(K_inf, takeoff_pose, gains_dict_px4, self.dt)
-                
-        else:
-            raise NotImplementedError("Circular tracking not implemented.")
-
-        ### Takeoff Pose ###
-        self.takeoff_pose = PoseStamped()
-        self.takeoff_pose.pose.position.x = 0
-        self.takeoff_pose.pose.position.y = 0
-        self.takeoff_pose.pose.position.z = self.takeoff_height
-        
-        ### Attitude Setpoint ###
-        self.att_setpoint = AttitudeTarget()
-        self.att_setpoint.header = Header()
-        self.att_setpoint.header.frame_id = "base_footprint"
-        self.att_setpoint.type_mask = 128  # Ignore attitude/orientation
-
-        ### Initialize the node ###
-        self._init_node()
-        self.rate = rospy.Rate(self.hz)
-
-    def _init_node(self):
-        rospy.init_node('eth_tracking_node', anonymous=True)
-
-    def _quad_lqr_controller(self, x):
-        if self.device.type == "cuda":
-            u_nom = torch.tensor(np.zeros((self.nu, 1)), device=self.device, dtype=torch.float32)
-        else:
-            u_nom = np.zeros((self.nu, 1))
-        return u_nom
-
-    def _send_attitude_setpoint(self, u):
-        print("Attitude setpoint publishing.")
-
-    def _get_states(self):
-        if self.device.type == "cuda":
-            x_safe = torch.tensor(np.zeros((self.env.nx, 1)), device=self.device, dtype=torch.float32)
-            x_nom = torch.tensor(np.zeros((self.torque_LQR.nx, 1)), device=self.device, dtype=torch.float32)
-        else:
-            x_safe = np.zeros((self.env.nx, 1))
-            x_nom = np.zeros((self.torque_LQR.nx, 1))
-
-        return x_safe, x_nom
-
-    def _takeoff_sequence(self):
-        print("Taking off.")
-
-    def _pend_upright_sim(self, req_time=0.5, tol=0.05):
-        print("Swinging the pendulum upright.")
-
-    def run(self, duration):
-        # Log Array
-        num_itr = int(duration * self.hz)
-        state_log = np.zeros((self.nx, num_itr))
-        nom_input_log = np.zeros((self.nu, num_itr))
-        safe_input_log = np.zeros((self.nu, num_itr))
-        error_log = np.zeros((self.torque_LQR.nx, num_itr))
-        status_log = np.zeros((1, num_itr))
-
-        ##### Takeoff Sequence #####0411_193906-Real
-        self._takeoff_sequence()
-        
-        ##### Pendulum Position Control #####
-        rospy.loginfo("Starting the constant position control!")
-        start_time = rospy.Time.now()
-
-        # for itr in range(int(1e10)):  # If you want to test with console.
-        for itr in range(num_itr):
-            if rospy.is_shutdown():
-                rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
-                break
-            
-            x_safe, x_nom = self._get_states()
-            
-            u_nom = self._quad_lqr_controller(x_nom)
-            # IPython.embed()
-            u_safe, stat = self.ncbf_cont.compute_control(x_safe, u_nom)
-            # IPython.embed()
-            u_safe = self.torque_LQR.torque_to_body_rate(u_safe)
-            rospy.loginfo(f"Itr.{itr}/{num_itr}, U Safe: {u_safe}")
-            
-            self._send_attitude_setpoint(u_safe)
-            
-            # Log the state and input
-            state_log[:, itr] = x_safe.flatten()
-            nom_input_log[:, itr] = u_nom.flatten()
-            safe_input_log[:, itr] = u_safe.flatten()
-            error_log[:, itr] = (x_nom - self.torque_LQR.xgoal).flatten()
-            status_log[:, itr] = stat
-
-            self.rate.sleep()
-
-        rospy.loginfo("Constant position control completed.")
-        return state_log, nom_input_log, safe_input_log, error_log, status_log
 
 
 if __name__ == "__main__":
