@@ -57,14 +57,14 @@ def load_phi_and_params(exp_name, checkpoint_number, device):
     uvertices_fn = uvertices_fn.to(device)
     if x_e is not None:
         x_e = x_e.to(device)
-    
+
     ###############################
     #####   Create the nCBF   #####
     ###############################
     phi_fn = NeuralCBF(h_fn, xdot_fn, 
-                       r, x_dim, u_dim, 
-                       device, args, 
-                       x_e=x_e, nn_input_modifier=nn_input_modifier)
+                        r, x_dim, u_dim, 
+                        device, args, 
+                        x_e=x_e, nn_input_modifier=nn_input_modifier)
     phi_fn = phi_fn.to(device)
 
     ###############################
@@ -81,56 +81,90 @@ def load_phi_and_params(exp_name, checkpoint_number, device):
 
 
 class TransformEucNNInput(nn.Module):
-	# Note: this is specific to FlyingInvPend
-	def __init__(self, state_index_dict):
-		"""
-		:param which_ind: flat numpy array
-		"""
-		super().__init__()
-		self.state_index_dict = state_index_dict
-		self.output_dim = 12
+# Note: this is specific to FlyingInvPend
+    def __init__(self, state_index_dict):
+        """
+        :param which_ind: flat numpy array
+        """
+        super().__init__()
+        self.state_index_dict = state_index_dict
+        self.output_dim = 12
 
-	def forward(self, x):
-		alpha = x[:, self.state_index_dict["alpha"]]
-		beta = x[:, self.state_index_dict["beta"]]
-		gamma = x[:, self.state_index_dict["gamma"]]
+    def forward(self, x):
+        alpha = x[:, self.state_index_dict["alpha"]]
+        beta = x[:, self.state_index_dict["beta"]]
+        gamma = x[:, self.state_index_dict["gamma"]]
 
-		dalpha = x[:, self.state_index_dict["dalpha"]]
-		dbeta = x[:, self.state_index_dict["dbeta"]]
-		dgamma = x[:, self.state_index_dict["dgamma"]]
+        dalpha = x[:, self.state_index_dict["dalpha"]]
+        dbeta = x[:, self.state_index_dict["dbeta"]]
+        dgamma = x[:, self.state_index_dict["dgamma"]]
 
-		phi = x[:, self.state_index_dict["phi"]]
-		theta = x[:, self.state_index_dict["theta"]]
+        phi = x[:, self.state_index_dict["phi"]]
+        theta = x[:, self.state_index_dict["theta"]]
 
-		dphi = x[:, self.state_index_dict["dphi"]]
-		dtheta = x[:, self.state_index_dict["dtheta"]]
+        dphi = x[:, self.state_index_dict["dphi"]]
+        dtheta = x[:, self.state_index_dict["dtheta"]]
 
-		# print("inside TransformEucNNInput's forward()")
-		# IPython.embed()
+        cos_alpha = torch.cos(alpha)
+        cos_beta = torch.cos(beta)
+        cos_gamma = torch.cos(gamma)
+        cos_theta = torch.cos(theta)
+        cos_phi = torch.cos(phi)
+        
+        sin_alpha = torch.sin(alpha)
+        sin_beta = torch.sin(beta)
+        sin_gamma = torch.sin(gamma)
+        sin_theta = torch.sin(theta)
+        sin_phi = torch.sin(phi)
 
-		x_quad = torch.cos(alpha)*torch.sin(beta)*torch.cos(gamma) + torch.sin(alpha)*torch.sin(gamma)
-		y_quad = torch.sin(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.cos(alpha)*torch.sin(gamma)
-		z_quad = torch.cos(beta)*torch.cos(gamma)
+        # x_quad = torch.cos(alpha)*torch.sin(beta)*torch.cos(gamma) + torch.sin(alpha)*torch.sin(gamma)
+        # y_quad = torch.sin(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.cos(alpha)*torch.sin(gamma)
+        # z_quad = torch.cos(beta)*torch.cos(gamma)
 
-		d_x_quad_d_alpha = torch.sin(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.cos(alpha)*torch.sin(gamma)
-		d_x_quad_d_beta = -torch.cos(alpha)*torch.cos(beta)*torch.cos(gamma)
-		d_x_quad_d_gamma = torch.cos(alpha)*torch.sin(beta)*torch.sin(gamma) - torch.sin(alpha)*torch.cos(gamma)
-		v_x_quad = dalpha*d_x_quad_d_alpha + dbeta*d_x_quad_d_beta + dgamma*d_x_quad_d_gamma
+        # d_x_quad_d_alpha = torch.sin(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.cos(alpha)*torch.sin(gamma)
+        # d_x_quad_d_beta = -torch.cos(alpha)*torch.cos(beta)*torch.cos(gamma)
+        # d_x_quad_d_gamma = torch.cos(alpha)*torch.sin(beta)*torch.sin(gamma) - torch.sin(alpha)*torch.cos(gamma)
+        # v_x_quad = dalpha*d_x_quad_d_alpha + dbeta*d_x_quad_d_beta + dgamma*d_x_quad_d_gamma
 
-		d_y_quad_d_alpha = -torch.cos(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.sin(alpha)*torch.sin(gamma)
-		d_y_quad_d_beta = -torch.sin(alpha)*torch.cos(beta)*torch.cos(gamma)
-		d_y_quad_d_gamma = torch.sin(alpha)*torch.sin(beta)*torch.sin(gamma) + torch.cos(alpha)*torch.cos(gamma)
-		v_y_quad = dalpha*d_y_quad_d_alpha + dbeta*d_y_quad_d_beta + dgamma*d_y_quad_d_gamma
+        # d_y_quad_d_alpha = -torch.cos(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.sin(alpha)*torch.sin(gamma)
+        # d_y_quad_d_beta = -torch.sin(alpha)*torch.cos(beta)*torch.cos(gamma)
+        # d_y_quad_d_gamma = torch.sin(alpha)*torch.sin(beta)*torch.sin(gamma) + torch.cos(alpha)*torch.cos(gamma)
+        # v_y_quad = dalpha*d_y_quad_d_alpha + dbeta*d_y_quad_d_beta + dgamma*d_y_quad_d_gamma
 
-		v_z_quad = dbeta*torch.sin(beta)*torch.cos(gamma) + dgamma*torch.cos(beta)*torch.sin(gamma)
+        # v_z_quad = dbeta*torch.sin(beta)*torch.cos(gamma) + dgamma*torch.cos(beta)*torch.sin(gamma)
 
-		x_pend = torch.sin(theta)*torch.cos(phi)
-		y_pend = -torch.sin(phi)
-		z_pend = torch.cos(theta)*torch.cos(phi)
+        # x_pend = torch.sin(theta)*torch.cos(phi)
+        # y_pend = -torch.sin(phi)
+        # z_pend = torch.cos(theta)*torch.cos(phi)
 
-		v_x_pend = -dtheta*torch.cos(theta)*torch.cos(phi) + dphi*torch.sin(theta)*torch.sin(phi)
-		v_y_pend = dphi*torch.cos(phi)
-		v_z_pend = dtheta*torch.sin(theta)*torch.cos(phi) + dphi*torch.cos(theta)*torch.sin(phi)
+        # v_x_pend = -dtheta*torch.cos(theta)*torch.cos(phi) + dphi*torch.sin(theta)*torch.sin(phi)
+        # v_y_pend = dphi*torch.cos(phi)
+        # v_z_pend = dtheta*torch.sin(theta)*torch.cos(phi) + dphi*torch.cos(theta)*torch.sin(phi)
 
-		rv = torch.cat([x_quad[:, None], y_quad[:, None], z_quad[:, None], v_x_quad[:, None], v_y_quad[:, None], v_z_quad[:, None], x_pend[:, None], y_pend[:, None], z_pend[:, None], v_x_pend[:, None], v_y_pend[:, None], v_z_pend[:, None]], dim=1)
-		return rv
+        x_quad = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
+        y_quad = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
+        z_quad = cos_beta*cos_gamma
+
+        d_x_quad_d_alpha = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
+        d_x_quad_d_beta = -cos_alpha*cos_beta*cos_gamma
+        d_x_quad_d_gamma = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
+        v_x_quad = dalpha*d_x_quad_d_alpha + dbeta*d_x_quad_d_beta + dgamma*d_x_quad_d_gamma
+
+        d_y_quad_d_alpha = -cos_alpha*sin_beta*cos_gamma - sin_alpha*sin_gamma
+        d_y_quad_d_beta = -sin_alpha*cos_beta*cos_gamma
+        d_y_quad_d_gamma = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
+        v_y_quad = dalpha*d_y_quad_d_alpha + dbeta*d_y_quad_d_beta + dgamma*d_y_quad_d_gamma
+
+        v_z_quad = dbeta*sin_beta*cos_gamma + dgamma*cos_beta*sin_gamma
+
+        x_pend = sin_theta*cos_phi
+        y_pend = -sin_phi
+        z_pend = cos_theta*cos_phi
+
+        v_x_pend = -dtheta*cos_theta*cos_phi + dphi*sin_theta*sin_phi
+        v_y_pend = dphi*cos_phi
+        v_z_pend = dtheta*sin_theta*cos_phi + dphi*cos_theta*sin_phi
+
+        rv = torch.cat([x_quad[:, None], y_quad[:, None], z_quad[:, None], v_x_quad[:, None], v_y_quad[:, None], v_z_quad[:, None], x_pend[:, None], y_pend[:, None], z_pend[:, None], v_x_pend[:, None], v_y_pend[:, None], v_z_pend[:, None]], dim=1)
+        return rv
+    

@@ -84,6 +84,8 @@ class FlyingInvertedPendulumEnv:
         dphi = x[:, self.i["dphi"]]
         dtheta = x[:, self.i["dtheta"]]
 
+        
+
         R = np.zeros((3, 3))
         R[0, 0] = np.cos(alpha)*np.cos(beta)
         R[0, 1] = np.cos(alpha)*np.sin(beta)*np.sin(gamma) - np.sin(alpha)*np.cos(gamma)

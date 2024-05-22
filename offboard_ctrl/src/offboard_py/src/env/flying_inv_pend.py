@@ -120,15 +120,33 @@ class XDot(nn.Module):
 		# print(f"{x.shape[0]=}")
 
 		R = torch.zeros((x.shape[0], 3, 3), device=self.device) # is this the correct rotation?
-		R[:, 0, 0] = torch.cos(alpha)*torch.cos(beta)
-		R[:, 0, 1] = torch.cos(alpha)*torch.sin(beta)*torch.sin(gamma) - torch.sin(alpha)*torch.cos(gamma)
-		R[:, 0, 2] = torch.cos(alpha)*torch.sin(beta)*torch.cos(gamma) + torch.sin(alpha)*torch.sin(gamma)
-		R[:, 1, 0] = torch.sin(alpha)*torch.cos(beta)
-		R[:, 1, 1] = torch.sin(alpha)*torch.sin(beta)*torch.sin(gamma) + torch.cos(alpha)*torch.cos(gamma)
-		R[:, 1, 2] = torch.sin(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.cos(alpha)*torch.sin(gamma)
-		R[:, 2, 0] = -torch.sin(beta)
-		R[:, 2, 1] = torch.cos(beta)*torch.sin(gamma)
-		R[:, 2, 2] = torch.cos(beta)*torch.cos(gamma)
+
+		cos_alpha = torch.cos(alpha)
+		cos_beta = torch.cos(beta)
+		cos_gamma = torch.cos(gamma)
+		sin_alpha = torch.sin(alpha)
+		sin_beta = torch.sin(beta)
+		sin_gamma = torch.sin(gamma)
+
+		# R[:, 0, 0] = torch.cos(alpha)*torch.cos(beta)
+		# R[:, 0, 1] = torch.cos(alpha)*torch.sin(beta)*torch.sin(gamma) - torch.sin(alpha)*torch.cos(gamma)
+		# R[:, 0, 2] = torch.cos(alpha)*torch.sin(beta)*torch.cos(gamma) + torch.sin(alpha)*torch.sin(gamma)
+		# R[:, 1, 0] = torch.sin(alpha)*torch.cos(beta)
+		# R[:, 1, 1] = torch.sin(alpha)*torch.sin(beta)*torch.sin(gamma) + torch.cos(alpha)*torch.cos(gamma)
+		# R[:, 1, 2] = torch.sin(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.cos(alpha)*torch.sin(gamma)
+		# R[:, 2, 0] = -torch.sin(beta)
+		# R[:, 2, 1] = torch.cos(beta)*torch.sin(gamma)
+		# R[:, 2, 2] = torch.cos(beta)*torch.cos(gamma)
+
+		R[:, 0, 0] = cos_alpha*cos_beta
+		R[:, 0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
+		R[:, 0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
+		R[:, 1, 0] = sin_alpha*cos_beta
+		R[:, 1, 1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
+		R[:, 1, 2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
+		R[:, 2, 0] = -sin_beta
+		R[:, 2, 1] = cos_beta*sin_gamma
+		R[:, 2, 2] = cos_beta*cos_gamma
 
 		k_x = R[:, 0, 2]
 		k_y = R[:, 1, 2]
@@ -160,8 +178,16 @@ class XDot(nn.Module):
 		ddbeta = ddquad_angles[:, 1]
 		ddalpha = ddquad_angles[:, 2]
 
-		ddphi = (3.0)*(k_y*torch.cos(phi) + k_z*torch.sin(phi))/(2*self.M*self.L_p*torch.cos(theta))*F + 2*dtheta*dphi*torch.tan(theta)
-		ddtheta = (3.0*(-k_x*torch.cos(theta)-k_y*torch.sin(phi)*torch.sin(theta) + k_z*torch.cos(phi)*torch.sin(theta))/(2.0*self.M*self.L_p))*F - torch.square(dphi)*torch.sin(theta)*torch.cos(theta)
+		cos_phi = torch.cos(phi)
+		cos_theta = torch.cos(theta)
+		sin_phi = torch.sin(phi)
+		sin_theta = torch.sin(theta)
+
+		# ddphi = (3.0)*(k_y*torch.cos(phi) + k_z*torch.sin(phi))/(2*self.M*self.L_p*torch.cos(theta))*F + 2*dtheta*dphi*torch.tan(theta)
+		# ddtheta = (3.0*(-k_x*torch.cos(theta)-k_y*torch.sin(phi)*torch.sin(theta) + k_z*torch.cos(phi)*torch.sin(theta))/(2.0*self.M*self.L_p))*F - torch.square(dphi)*torch.sin(theta)*torch.cos(theta)
+
+		ddphi = (3.0)*(k_y*cos_phi + k_z*sin_phi)/(2*self.M*self.L_p*cos_theta)*F + 2*dtheta*dphi*torch.tan(theta)
+		ddtheta = (3.0*(-k_x*cos_theta-k_y*sin_phi*sin_theta + k_z*cos_phi*sin_theta)/(2.0*self.M*self.L_p))*F - torch.square(dphi)*sin_theta*cos_theta
 
 		# Excluding translational motion
 		rv = torch.cat([x[:, [self.i["dgamma"]]], x[:, [self.i["dbeta"]]], x[:, [self.i["dalpha"]]], ddgamma[:, None], ddbeta[:, None], ddalpha[:, None], dphi[:, None], dtheta[:, None], ddphi[:, None], ddtheta[:, None]], axis=1)
