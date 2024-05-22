@@ -1,3 +1,4 @@
+import time
 import torch
 from torch import nn
 from torch.autograd import grad
@@ -115,29 +116,60 @@ class NeuralCBF(nn.Module):
 			orig_req_grad_setting = x.requires_grad # Basically only useful if x.requires_grad was False before
 			x.requires_grad = True
 
-		# if self.x_e is None:
-		# 	if self.nn_input_modifier is None:
-		# 		beta_net_value = self.net_reshape_h(x)
-		# 	else:
-		# 		beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
-		# 	new_h = nn.functional.softplus(beta_net_value) + k0*self.h_fn(x)
-		# else:
-		# 	if self.nn_input_modifier is None:
-		# 		beta_net_value = self.net_reshape_h(x)
-		# 		beta_net_xe_value = self.net_reshape_h(self.x_e)
-		# 	else:
-		beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
-		beta_net_xe_value = self.net_reshape_h(self.nn_input_modifier(self.x_e))
+		if self.x_e is None:
+			if self.nn_input_modifier is None:
+				beta_net_value = self.net_reshape_h(x)
+			else:
+				beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
+			new_h = nn.functional.softplus(beta_net_value) + k0*self.h_fn(x)
+		else:
+			if self.nn_input_modifier is None:
+				beta_net_value = self.net_reshape_h(x)
+				beta_net_xe_value = self.net_reshape_h(self.x_e)
+			else:
+				# torch.cuda.synchronize()
+				start_time = time.time()
+				modified_input = self.nn_input_modifier(x)
+				# torch.cuda.synchronize()
+				end_time = time.time()
+				print(f"Input modifier: {(end_time - start_time)*1000}")
+				
+				# torch.cuda.synchronize()
+				start_time = time.time()
+				beta_net_value = self.net_reshape_h(modified_input)
+				# torch.cuda.synchronize()
+				end_time = time.time()
+				print(f"NN time: {(end_time - start_time)*1000}")
+				
+				# beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
+				beta_net_xe_value = self.net_reshape_h(self.nn_input_modifier(self.x_e))
 
-		new_h = torch.square(beta_net_value - beta_net_xe_value) + k0*self.h_fn(x)
+			new_h = torch.square(beta_net_value - beta_net_xe_value) + k0*self.h_fn(x)
 
+		# torch.cuda.synchronize()
+		start_time = time.time()
 		h_ith_deriv = self.h_fn(x) # bs x 1, the zeroth derivative
+		# torch.cuda.synchronize()
+		end_time = time.time()
+		print(f"Rho: {(end_time - start_time)*1000}")
 
 		h_derivs = h_ith_deriv # bs x 1
+		# torch.cuda.synchronize()
+		start_time = time.time()
 		f_val = self.xdot_fn(x, torch.zeros(bs, self.u_dim).to(self.device)) # bs x x_dim
+		# torch.cuda.synchronize()
+		end_time = time.time()
+		print(f"xdot_fn: {(end_time - start_time)*1000}")
 
 		for i in range(self.r-1):
+			
+			# torch.cuda.synchronize()
+			start_time = time.time()
 			grad_h_ith = grad([torch.sum(h_ith_deriv)], x, create_graph=True)[0] # bs x x_dim; create_graph ensures gradient is computed through the gradient operation
+			# torch.cuda.synchronize()
+			end_time = time.time()
+			print(f"Rho grad: {(end_time - start_time)*1000}")
+
 			h_ith_deriv = (grad_h_ith.unsqueeze(dim=1)).bmm(f_val.unsqueeze(dim=2)) # bs x 1 x 1
 			h_ith_deriv = h_ith_deriv[:, :, 0] # bs x 1
 			h_derivs = torch.cat((h_derivs, h_ith_deriv), dim=1)

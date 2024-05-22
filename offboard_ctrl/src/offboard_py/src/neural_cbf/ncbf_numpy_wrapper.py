@@ -23,8 +23,9 @@ class NCBFNumpy:
 
     def _x_numpy_to_x_torch(self, x):
         # Slice off translational states, if they are present
-        if len(x.shape) == 2:
-            x = np.reshape(x, (1, -1))
+
+        # if len(x.shape) == 2: # NOTE: just commented out for test purposes. NEED!
+        #     x = np.reshape(x, (1, -1))
         x = x[:, :10]
 
         # Wrap-around on cyclical angles
@@ -34,8 +35,14 @@ class NCBFNumpy:
         for i in ind_cyclical:
             x[:, i] = self._convert_angle_to_negpi_pi_interval(x[:, i])
 
-        # x_torch = torch.from_numpy(x.astype("float32")).to(self.device)
-        x_torch = torch.from_numpy(x.astype("float32"))
+        # torch.cuda.synchronize()
+        start_time = time.time()
+
+        x_torch = torch.from_numpy(x.astype("float32")).to(self.device)
+        
+        # torch.cuda.synchronize()
+        end_time = time.time()
+        print(f"Numpy to torch: {(end_time - start_time)*1000}")
         # Q: how come we don't have to involve device = gpu?
         # A: because it is set as CPU elsewhere? Yes
 
@@ -48,32 +55,40 @@ class NCBFNumpy:
         """
         x_torch = self._x_numpy_to_x_torch(x)
         phi_torch = self.torch_phi_fn(x_torch)
+
+        # torch.cuda.synchronize()
+        start_time = time.time()
+			
         # phi_numpy = phi_torch.detach().cpu().numpy()
         phi_numpy = phi_torch.detach().numpy()
 
+        # torch.cuda.synchronize()
+        end_time = time.time()
+        print(f"Torch to numpy: {(end_time - start_time)*1000}")
+
         return phi_numpy
     
-    def phi_fn_and_grad(self, x):
-        """
-        :param x: (16)
-        :return: (r+1) where r is relative degree
-        """
-        x_torch = self._x_numpy_to_x_torch(x)
-        bs = x_torch.shape[0]
-        x_torch.requires_grad = True
+    # def phi_fn_and_grad(self, x):
+    #     """
+    #     :param x: (16)
+    #     :return: (r+1) where r is relative degree
+    #     """
+    #     x_torch = self._x_numpy_to_x_torch(x)
+    #     bs = x_torch.shape[0]
+    #     x_torch.requires_grad = True
 
-        phi_torch = self.torch_phi_fn(x_torch, grad_x=True)
-        phi_val = torch.sum(phi_torch[:, -1])
-        phi_val.backward()
-        phi_grad = x_torch.grad
+    #     phi_torch = self.torch_phi_fn(x_torch, grad_x=True)
+    #     phi_val = torch.sum(phi_torch[:, -1])
+    #     phi_val.backward()
+    #     phi_grad = x_torch.grad
 
-        x_torch.requires_grad = False
-        phi_grad = phi_grad.detach().numpy()
-        phi_grad = np.concatenate((phi_grad, np.zeros((bs, 6))), axis=1)
+    #     x_torch.requires_grad = False
+    #     phi_grad = phi_grad.detach().numpy()
+    #     phi_grad = np.concatenate((phi_grad, np.zeros((bs, 6))), axis=1)
         
-        phi_numpy = phi_torch.detach().numpy()
+    #     phi_numpy = phi_torch.detach().numpy()
 
-        return phi_numpy, phi_grad
+    #     return phi_numpy, phi_grad
 
     def phi_grad(self, x):
         """

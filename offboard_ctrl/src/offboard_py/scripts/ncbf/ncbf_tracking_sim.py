@@ -62,12 +62,12 @@ class NCBFTrackingNode:
         ##### Neural CBF #####
         ######################
 
-        # if torch.cuda.is_available():
-        #     os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
-        #     dev = "cuda:%i" % (0)
-        #     print("Using GPU device: %s" % dev)
-        # else:
-        dev = "cpu"
+        if torch.cuda.is_available():
+            os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
+            dev = "cuda:%i" % (0)
+            print("Using GPU device: %s" % dev)
+        else:
+            dev = "cpu"
         device = torch.device(dev)
 
         self.exp_name = exp_name
