@@ -63,14 +63,53 @@ class NCBFTrackingNode:
         ############# Torch vs Numpy #############
         import time, pickle
 
+        # print("######################################################")
+        # outside_x = np.zeros((16,1))
+        # outside_x[0] = np.pi/4
+        # outside_x[1] = np.pi/4
+        # outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        # compute_start_time = time.time()
+        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        # compute_end_time = time.time()
+        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
+        # print("######################################################")
+
+        # print("\n######################################################")
+        # compute_start_time = time.time()
+        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        # compute_end_time = time.time()
+        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
+        # print("######################################################")
+
+        # print("\n######################################################")
+        # compute_start_time = time.time()
+        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        # compute_end_time = time.time()
+        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
+        # print("######################################################")
+
+        # print("\n######################################################")
+        # compute_start_time = time.time()
+        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        # compute_end_time = time.time()
+        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
+        # print("######################################################")
+
+        # IPython.embed()
+
+        ######## MULTIPLE ########
         timing_data = []
 
-        batch_sizes = [1, 1_000, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000]
+        # batch_sizes = [1, 1_000, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000]
+        batch_sizes = [1, 2**3, 2**6, 2**9, 2**12, 2**15, 2**18, 2**21]
 
         for i in batch_sizes:
 
             x_torch = torch.rand(i,10).to(device)
             x_np = np.random.rand(i,10)
+
+            _ = torch_ncbf_fn(torch.rand(1,10).to(device))
+            _ = self.ncbf_fn.phi_fn(np.random.rand(1,10))
 
             # torch.cuda.synchronize()
             torch_start_time = time.time()
@@ -89,15 +128,14 @@ class NCBFTrackingNode:
             print(f"Time taken for numpy: {numpy_end_time - numpy_start_time}")
             numpy_time = numpy_end_time - numpy_start_time
             print(f"{phi_numpy.shape=}")
-
+            
             timing_data.append([torch_time, numpy_time])
 
         timing_array = np.array(timing_data)
 
-        with open('cpu_timing_data.pkl', 'wb') as f:
+        with open('cpu_timing_data_3.pkl', 'wb') as f:
             pickle.dump({"timing_array": timing_array, "batch_sizes": batch_sizes}, f)
 
-        # # IPython.embed()
 
         # inside_x = np.zeros((16,1))
         # inside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))

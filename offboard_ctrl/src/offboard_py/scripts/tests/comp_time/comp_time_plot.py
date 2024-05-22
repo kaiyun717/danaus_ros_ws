@@ -81,11 +81,11 @@ import matplotlib.gridspec as gridspec
 import numpy as np
 
 # Load the CPU timing data
-with open('cpu_timing_data_2.pkl', 'rb') as f:
+with open('cpu_timing_data_3.pkl', 'rb') as f:
     cpu_data = pickle.load(f)
 
 # Load the GPU timing data
-with open('gpu_timing_data_2.pkl', 'rb') as f:
+with open('gpu_timing_data_3.pkl', 'rb') as f:
     gpu_data = pickle.load(f)
 
 # Extract batch sizes (assumed to be the same in both files)
