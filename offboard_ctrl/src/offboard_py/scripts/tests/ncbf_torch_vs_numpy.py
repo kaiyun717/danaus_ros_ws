@@ -101,7 +101,7 @@ class NCBFTrackingNode:
         timing_data = []
 
         # batch_sizes = [1, 1_000, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000]
-        batch_sizes = [1, 2**3, 2**6, 2**9, 2**12, 2**15, 2**18, 2**21]
+        batch_sizes = [1]#, 2**3, 2**6, 2**9, 2**12, 2**15, 2**18, 2**21]
 
         for i in batch_sizes:
 
@@ -111,30 +111,34 @@ class NCBFTrackingNode:
             _ = torch_ncbf_fn(torch.rand(1,10).to(device))
             _ = self.ncbf_fn.phi_fn(np.random.rand(1,10))
 
-            # torch.cuda.synchronize()
+            print("######### TORCH #########")
+            torch.cuda.synchronize()
             torch_start_time = time.time()
             phi_torch = torch_ncbf_fn(x_torch)
-            # torch.cuda.synchronize()
+            torch.cuda.synchronize()
             torch_end_time = time.time()
             print(f"Time taken for torch: {torch_end_time - torch_start_time}")
             torch_time = torch_end_time - torch_start_time
             print(f"{phi_torch.shape=}")
-
-            # torch.cuda.synchronize()
+            
+            print("######### NUMPY #########")
+            torch.cuda.synchronize()
             numpy_start_time = time.time()
             phi_numpy = self.ncbf_fn.phi_fn(x_np)
-            # torch.cuda.synchronize()
+            torch.cuda.synchronize()
             numpy_end_time = time.time()
             print(f"Time taken for numpy: {numpy_end_time - numpy_start_time}")
             numpy_time = numpy_end_time - numpy_start_time
             print(f"{phi_numpy.shape=}")
+
+            IPython.embed()
             
             timing_data.append([torch_time, numpy_time])
 
-        timing_array = np.array(timing_data)
+        # timing_array = np.array(timing_data)
 
-        with open('cpu_timing_data_3.pkl', 'wb') as f:
-            pickle.dump({"timing_array": timing_array, "batch_sizes": batch_sizes}, f)
+        # with open('cpu_timing_data_3.pkl', 'wb') as f:
+        #     pickle.dump({"timing_array": timing_array, "batch_sizes": batch_sizes}, f)
 
 
         # inside_x = np.zeros((16,1))

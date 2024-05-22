@@ -35,7 +35,14 @@ class NCBFNumpy:
         for i in ind_cyclical:
             x[:, i] = self._convert_angle_to_negpi_pi_interval(x[:, i])
 
+        # torch.cuda.synchronize()
+        start_time = time.time()
+
         x_torch = torch.from_numpy(x.astype("float32")).to(self.device)
+        
+        # torch.cuda.synchronize()
+        end_time = time.time()
+        print(f"Numpy to torch: {(end_time - start_time)*1000}")
         # Q: how come we don't have to involve device = gpu?
         # A: because it is set as CPU elsewhere? Yes
 
@@ -48,8 +55,16 @@ class NCBFNumpy:
         """
         x_torch = self._x_numpy_to_x_torch(x)
         phi_torch = self.torch_phi_fn(x_torch)
+
+        # torch.cuda.synchronize()
+        start_time = time.time()
+			
         # phi_numpy = phi_torch.detach().cpu().numpy()
         phi_numpy = phi_torch.detach().numpy()
+
+        # torch.cuda.synchronize()
+        end_time = time.time()
+        print(f"Torch to numpy: {(end_time - start_time)*1000}")
 
         return phi_numpy
     
