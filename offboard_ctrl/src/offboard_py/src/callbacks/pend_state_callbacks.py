@@ -98,20 +98,6 @@ class PendulumCB:
         pitch = rs_pose[0] / self.L_p
         return np.array([roll, pitch])
 
-    # def get_rs_ang_vel(self, vehicle_pose=None):
-    #     rs_ang = self.get_rs_ang(vehicle_pose)
-        
-    #     # current_time = self.pose.header.stamp.to_sec()
-    #     # prev_time = self.prev_pose.header.stamp.to_sec()
-    #     # dt = current_time - prev_time
-    #     # if dt < 1e-5:
-    #     #     print("Time difference is too small!")
-    #     #     return np.array([0, 0])
-    #     rs_ang_vel = (rs_ang - self.prev_pend_ang) / (1/90)
-    #     self.prev_pend_ang = rs_ang
-    #     self.avg_pend_vel = (1 - self.w_avg)*rs_ang_vel + self.w_avg*self.avg_pend_vel
-    #     return self.avg_pend_vel
-
     def get_rs_ang_vel(self, vehicle_pose=None, vehicle_vel=None):
         rs_vel = self.get_rs_vel(vehicle_vel)
         

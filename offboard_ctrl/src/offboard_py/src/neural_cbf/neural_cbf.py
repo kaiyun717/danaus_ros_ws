@@ -115,21 +115,21 @@ class NeuralCBF(nn.Module):
 			orig_req_grad_setting = x.requires_grad # Basically only useful if x.requires_grad was False before
 			x.requires_grad = True
 
-		if self.x_e is None:
-			if self.nn_input_modifier is None:
-				beta_net_value = self.net_reshape_h(x)
-			else:
-				beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
-			new_h = nn.functional.softplus(beta_net_value) + k0*self.h_fn(x)
-		else:
-			if self.nn_input_modifier is None:
-				beta_net_value = self.net_reshape_h(x)
-				beta_net_xe_value = self.net_reshape_h(self.x_e)
-			else:
-				beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
-				beta_net_xe_value = self.net_reshape_h(self.nn_input_modifier(self.x_e))
+		# if self.x_e is None:
+		# 	if self.nn_input_modifier is None:
+		# 		beta_net_value = self.net_reshape_h(x)
+		# 	else:
+		# 		beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
+		# 	new_h = nn.functional.softplus(beta_net_value) + k0*self.h_fn(x)
+		# else:
+		# 	if self.nn_input_modifier is None:
+		# 		beta_net_value = self.net_reshape_h(x)
+		# 		beta_net_xe_value = self.net_reshape_h(self.x_e)
+		# 	else:
+		beta_net_value = self.net_reshape_h(self.nn_input_modifier(x))
+		beta_net_xe_value = self.net_reshape_h(self.nn_input_modifier(self.x_e))
 
-			new_h = torch.square(beta_net_value - beta_net_xe_value) + k0*self.h_fn(x)
+		new_h = torch.square(beta_net_value - beta_net_xe_value) + k0*self.h_fn(x)
 
 		h_ith_deriv = self.h_fn(x) # bs x 1, the zeroth derivative
 

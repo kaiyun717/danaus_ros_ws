@@ -83,12 +83,16 @@ class NCBFTrackingNode:
         x_np = np.random.rand(1,10)
 
         torch_start_time = time.time()
+        torch.cuda.synchronize()
         phi_torch = torch_ncbf_fn(x_torch)
+        torch.cuda.synchronize()
         torch_end_time = time.time()
         print(f"Time taken for torch: {torch_end_time - torch_start_time}")
 
         numpy_start_time = time.time()
+        torch.cuda.synchronize()
         phi_numpy = self.ncbf_fn.phi_fn(x_np)
+        torch.cuda.synchronize()
         numpy_end_time = time.time()
         print(f"Time taken for numpy: {numpy_end_time - numpy_start_time}")
 
@@ -358,12 +362,12 @@ if __name__ == "__main__":
         Q = [Qx, Qy, Qz]
         R = [Rx, Ry, Rz]
 
-    if torch.cuda.is_available():
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
-        dev = "cuda:%i" % (0)
-        print("Using GPU device: %s" % dev)
-    else:
-        dev = "cpu"
+    # if torch.cuda.is_available():
+    #     os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
+    #     dev = "cuda:%i" % (0)
+    #     print("Using GPU device: %s" % dev)
+    # else:
+    dev = "cpu"
     device = torch.device(dev)
 
         
