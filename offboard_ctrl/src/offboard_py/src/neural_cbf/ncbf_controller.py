@@ -1,3 +1,4 @@
+import torch
 import time 
 import numpy as np
 import math
@@ -54,8 +55,10 @@ class NCBFController:
         u_ref[0] = (u_ref[0] - g) * self.M 
         x = np.reshape(x, (1, -1))
         
+        torch.cuda.synchronize()
         phi_start = time.time()
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree
+        torch.cuda.synchronize()
         phi_end = time.time()
         print(f"Phi computation time: {phi_end - phi_start}")
 
@@ -64,8 +67,10 @@ class NCBFController:
         x_next_end = time.time()
         print(f"x_next computation time: {x_next_end - x_next_start}")
 
+        torch.cuda.synchronize()
         next_phi_start = time.time()
         next_phi_val = self.cbf_fn.phi_fn(x_next)
+        torch.cuda.synchronize()
         next_phi_end = time.time()
         print(f"Next phi computation time: {next_phi_end - next_phi_start}")
 
@@ -98,9 +103,11 @@ class NCBFController:
         g_x_end = time.time()
         print(f"g_x computation time: {g_x_end - g_x_start}")
 
+        torch.cuda.synchronize()
         phi_grad_start = time.time()
         phi_grad = self.cbf_fn.phi_grad(x)
         # print(f"Phi grad: {phi_grad}")
+        torch.cuda.synchronize()
         phi_grad_end = time.time()
         print(f"Phi grad computation time: {phi_grad_end - phi_grad_start}")
 
@@ -139,7 +146,7 @@ class NCBFController:
         b = np.array([self.M*g, 0, 0, 0])[:, None]
 
         # print("line 177, flying_cbf_controller")
-        # IPython.embed()
+        IPython.embed()
 
         try:
             # init_impulses = self.mixer_inv @ (u_ref - np.array([self.M*g, 0, 0, 0])[:, None])

@@ -117,6 +117,7 @@ class XDot(nn.Module):
 		theta = x[:, self.i["theta"]]
 		dphi = x[:, self.i["dphi"]]
 		dtheta = x[:, self.i["dtheta"]]
+		# print(f"{x.shape[0]=}")
 
 		R = torch.zeros((x.shape[0], 3, 3), device=self.device) # is this the correct rotation?
 		R[:, 0, 0] = torch.cos(alpha)*torch.cos(beta)

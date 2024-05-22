@@ -62,18 +62,26 @@ class NCBFTrackingNode:
 
         ############# Torch vs Numpy #############
         import time
-        x_torch = torch.rand(1,10).to(device)
-        x_np = np.random.rand(1,10)
+        x_torch = torch.rand(100_000,10).to(device)
+        x_np = np.random.rand(100_000,10)
 
+        torch.cuda.synchronize()
         torch_start_time = time.time()
         phi_torch = torch_ncbf_fn(x_torch)
+        torch.cuda.synchronize()
         torch_end_time = time.time()
         print(f"Time taken for torch: {torch_end_time - torch_start_time}")
+        print(f"{phi_torch.shape=}")
 
+        torch.cuda.synchronize()
         numpy_start_time = time.time()
         phi_numpy = self.ncbf_fn.phi_fn(x_np)
+        torch.cuda.synchronize()
         numpy_end_time = time.time()
         print(f"Time taken for numpy: {numpy_end_time - numpy_start_time}")
+        print(f"{phi_numpy.shape=}")
+
+        IPython.embed()
 
         inside_x = np.zeros((16,1))
         inside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
@@ -191,12 +199,12 @@ if __name__ == "__main__":
         Q = [Qx, Qy, Qz]
         R = [Rx, Ry, Rz]
 
-    # if torch.cuda.is_available():
-    #     os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
-    #     dev = "cuda:%i" % (0)
-    #     print("Using GPU device: %s" % dev)
-    # else:
-    dev = "cpu"
+    if torch.cuda.is_available():
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
+        dev = "cuda:%i" % (0)
+        print("Using GPU device: %s" % dev)
+    else:
+        dev = "cpu"
     device = torch.device(dev)
 
         
