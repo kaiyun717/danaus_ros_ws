@@ -61,67 +61,61 @@ class NCBFTrackingNode:
         self.ncbf_cont = NCBFController(self.env, self.ncbf_fn, param_dict, eps_bdry=eps_bdry, eps_outside=eps_outside)
 
         ############# Torch vs Numpy #############
-        import time
-        x_torch = torch.rand(100_000,10).to(device)
-        x_np = np.random.rand(100_000,10)
+        import time, pickle
 
-        torch.cuda.synchronize()
-        torch_start_time = time.time()
-        phi_torch = torch_ncbf_fn(x_torch)
-        torch.cuda.synchronize()
-        torch_end_time = time.time()
-        print(f"Time taken for torch: {torch_end_time - torch_start_time}")
-        print(f"{phi_torch.shape=}")
+        timing_data = []
 
-        torch.cuda.synchronize()
-        numpy_start_time = time.time()
-        phi_numpy = self.ncbf_fn.phi_fn(x_np)
-        torch.cuda.synchronize()
-        numpy_end_time = time.time()
-        print(f"Time taken for numpy: {numpy_end_time - numpy_start_time}")
-        print(f"{phi_numpy.shape=}")
+        batch_sizes = [1, 1_000, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000]
 
-        IPython.embed()
+        for i in batch_sizes:
 
-        inside_x = np.zeros((16,1))
-        inside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
-        compute_start_time = time.time()
-        u_safe, stat, phi_val = self.ncbf_cont.compute_control(inside_x, inside_u)
-        compute_end_time = time.time()
-        print(f"Time taken for compute control for inside: {compute_end_time - compute_start_time}")
+            x_torch = torch.rand(i,10).to(device)
+            x_np = np.random.rand(i,10)
 
-        outside_x = np.zeros((16,1))
-        outside_x[0] = np.pi/4
-        outside_x[1] = np.pi/4
-        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
-        compute_start_time = time.time()
-        u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
-        compute_end_time = time.time()
-        print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
+            # torch.cuda.synchronize()
+            torch_start_time = time.time()
+            phi_torch = torch_ncbf_fn(x_torch)
+            # torch.cuda.synchronize()
+            torch_end_time = time.time()
+            print(f"Time taken for torch: {torch_end_time - torch_start_time}")
+            torch_time = torch_end_time - torch_start_time
+            print(f"{phi_torch.shape=}")
 
-        IPython.embed()
+            # torch.cuda.synchronize()
+            numpy_start_time = time.time()
+            phi_numpy = self.ncbf_fn.phi_fn(x_np)
+            # torch.cuda.synchronize()
+            numpy_end_time = time.time()
+            print(f"Time taken for numpy: {numpy_end_time - numpy_start_time}")
+            numpy_time = numpy_end_time - numpy_start_time
+            print(f"{phi_numpy.shape=}")
 
-        ######################
-        #####   PARAMS   #####
-        ######################
-        self.mode = mode                        # "sim" or "real"
-        self.hz = hz                            # Control Loop Frequency
-        self.track_type = track_type            # "constant" or "circular"
-        self.takeoff_height = takeoff_height    # Takeoff Height
-        
-        self.mass = mass                        # Mass of the quadrotor + pendulum
-        self.L = L                              # Length from pendulum base to CoM
-        self.dt = 1/self.hz                     # Time step
-        self.lqr_itr = lqr_itr                  # Number of iterations for Infinite-Horizon LQR
-        self.cont_duration = cont_duration      # Duration for which the controller should run (in seconds)
-        self.lqr_cont_type = lqr_cont_type      # "with_pend" or "without_pend"
+            timing_data.append([torch_time, numpy_time])
 
-        self.nx = 16
-        self.nu = 4
+        timing_array = np.array(timing_data)
 
-        self.pend_upright_time = pend_upright_time  # Time to keep the pendulum upright
-        self.pend_upright_tol = pend_upright_tol    # Tolerance for pendulum relative position [r,z] (norm in meters)
+        with open('cpu_timing_data.pkl', 'wb') as f:
+            pickle.dump({"timing_array": timing_array, "batch_sizes": batch_sizes}, f)
 
+        # # IPython.embed()
+
+        # inside_x = np.zeros((16,1))
+        # inside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        # compute_start_time = time.time()
+        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(inside_x, inside_u)
+        # compute_end_time = time.time()
+        # print(f"Time taken for compute control for inside: {compute_end_time - compute_start_time}")
+
+        # outside_x = np.zeros((16,1))
+        # outside_x[0] = np.pi/4
+        # outside_x[1] = np.pi/4
+        # outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        # compute_start_time = time.time()
+        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        # compute_end_time = time.time()
+        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
+
+        # IPython.embed()
 
 
 if __name__ == "__main__":
@@ -199,12 +193,12 @@ if __name__ == "__main__":
         Q = [Qx, Qy, Qz]
         R = [Rx, Ry, Rz]
 
-    if torch.cuda.is_available():
-        os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
-        dev = "cuda:%i" % (0)
-        print("Using GPU device: %s" % dev)
-    else:
-        dev = "cpu"
+    # if torch.cuda.is_available():
+    #     os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
+    #     dev = "cuda:%i" % (0)
+    #     print("Using GPU device: %s" % dev)
+    # else:
+    dev = "cpu"
     device = torch.device(dev)
 
         
@@ -218,6 +212,4 @@ if __name__ == "__main__":
         lqr_itr=lqr_itr, 
         pend_upright_time=pend_upright_time, 
         pend_upright_tol=pend_upright_tol)
-    
-    state_log, nom_input_log, safe_input_log, error_log, status_log = ncbf_node.run(duration=cont_duration)
     
