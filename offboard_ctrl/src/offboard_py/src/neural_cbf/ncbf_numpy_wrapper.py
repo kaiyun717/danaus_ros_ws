@@ -47,7 +47,8 @@ class NCBFNumpy:
         """
         x_torch = self._x_numpy_to_x_torch(x)
         phi_torch = self.torch_phi_fn(x_torch)
-        phi_numpy = phi_torch.detach().cpu().numpy()
+        # phi_numpy = phi_torch.detach().cpu().numpy()
+        phi_numpy = phi_torch.detach().numpy()
 
         return phi_numpy
     
@@ -92,7 +93,8 @@ class NCBFNumpy:
         # Post operation
         x_torch.requires_grad = False
 
-        phi_grad = phi_grad.detach().cpu().numpy()
+        # phi_grad = phi_grad.detach().cpu().numpy()
+        phi_grad = phi_grad.detach().numpy()
         phi_grad = np.concatenate((phi_grad, np.zeros((bs, 6))), axis=1)
 
         return phi_grad
