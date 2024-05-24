@@ -61,68 +61,6 @@ class NCBFTrackingNode:
         self.ncbf_cont = NCBFController(self.env, self.ncbf_fn, param_dict, eps_bdry=eps_bdry, eps_outside=eps_outside)
 
         ############# Torch vs Numpy #############
-<<<<<<< HEAD
-        import time
-        x_torch = torch.rand(1,10).to(device)
-        x_np = np.random.rand(1,10)
-
-        torch_start_time = time.time()
-        torch.cuda.synchronize()
-        phi_torch = torch_ncbf_fn(x_torch)
-        torch.cuda.synchronize()
-        torch_end_time = time.time()
-        print(f"Time taken for torch: {torch_end_time - torch_start_time}")
-
-        numpy_start_time = time.time()
-        torch.cuda.synchronize()
-        phi_numpy = self.ncbf_fn.phi_fn(x_np)
-        torch.cuda.synchronize()
-        numpy_end_time = time.time()
-        print(f"Time taken for numpy: {numpy_end_time - numpy_start_time}")
-
-        inside_x = np.zeros((16,1))
-        inside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
-        compute_start_time = time.time()
-        u_safe, stat, phi_val = self.ncbf_cont.compute_control(inside_x, inside_u)
-        compute_end_time = time.time()
-        print(f"Time taken for compute control for inside: {compute_end_time - compute_start_time}")
-
-        outside_x = np.zeros((16,1))
-        outside_x[0] = np.pi/4
-        outside_x[1] = np.pi/4
-        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
-        compute_start_time = time.time()
-        u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
-        compute_end_time = time.time()
-        print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
-
-        IPython.embed()
-
-        ######################
-        #####   PARAMS   #####
-        ######################
-        self.mode = mode                        # "sim" or "real"
-        self.hz = hz                            # Control Loop Frequency
-        self.track_type = track_type            # "constant" or "circular"
-        self.takeoff_height = takeoff_height    # Takeoff Height
-        
-        self.mass = mass                        # Mass of the quadrotor + pendulum
-        self.L = L                              # Length from pendulum base to CoM
-        self.dt = 1/self.hz                     # Time step
-        self.lqr_itr = lqr_itr                  # Number of iterations for Infinite-Horizon LQR
-        self.cont_duration = cont_duration      # Duration for which the controller should run (in seconds)
-        self.lqr_cont_type = lqr_cont_type      # "with_pend" or "without_pend"
-
-        self.nx = 16
-        self.nu = 4
-
-        self.pend_upright_time = pend_upright_time  # Time to keep the pendulum upright
-        self.pend_upright_tol = pend_upright_tol    # Tolerance for pendulum relative position [r,z] (norm in meters)
-
-        ######################
-        #####   MAVROS   #####
-        ######################
-=======
         import time, pickle
 
         # print("######################################################")
@@ -133,31 +71,75 @@ class NCBFTrackingNode:
         # compute_start_time = time.time()
         # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
         # compute_end_time = time.time()
-        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
+        # print(f"Time taken for compute control for outside: {(compute_end_time - compute_start_time)*1000}")
         # print("######################################################")
 
-        # print("\n######################################################")
-        # compute_start_time = time.time()
-        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
-        # compute_end_time = time.time()
-        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
-        # print("######################################################")
+        
+        # num_samples = 0
+        # total_time = 0
 
-        # print("\n######################################################")
-        # compute_start_time = time.time()
-        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
-        # compute_end_time = time.time()
-        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
-        # print("######################################################")
-
-        # print("\n######################################################")
-        # compute_start_time = time.time()
-        # u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
-        # compute_end_time = time.time()
-        # print(f"Time taken for compute control for outside: {compute_end_time - compute_start_time}")
-        # print("######################################################")
+        # for _ in range(1000):
+        #     outside_x = np.zeros((16,1))
+        #     outside_x[0] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        #     outside_x[1] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        #     outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        #     compute_start_time = time.time()
+        #     u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        #     compute_end_time = time.time()
+        #     if stat == 0:
+        #         num_samples += 1
+        #         total_time += compute_end_time - compute_start_time
+        
+        # print(f"Average time taken for compute control for outside: {(total_time/num_samples)*1000}")
 
         # IPython.embed()
+
+
+        print("######################################################")
+        outside_x = np.zeros((16,1))
+        outside_x[0] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_x[1] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        compute_start_time = time.time()
+        u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        compute_end_time = time.time()
+        print(f"Time taken for compute control for outside: {(compute_end_time - compute_start_time)*1000}")
+        print("######################################################")
+
+        print("\n######################################################")
+        outside_x = np.zeros((16,1))
+        outside_x[0] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_x[1] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        compute_start_time = time.time()
+        u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        compute_end_time = time.time()
+        print(f"Time taken for compute control for outside: {(compute_end_time - compute_start_time)*1000}")
+        print("######################################################")
+
+        print("\n######################################################")
+        outside_x = np.zeros((16,1))
+        outside_x[0] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_x[1] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        compute_start_time = time.time()
+        u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        compute_end_time = time.time()
+        print(f"Time taken for compute control for outside: {(compute_end_time - compute_start_time)*1000}")
+        print("######################################################")
+
+        print("\n######################################################")
+        outside_x = np.zeros((16,1))
+        outside_x[0] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_x[1] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        compute_start_time = time.time()
+        u_safe, stat, phi_val = self.ncbf_cont.compute_control(outside_x, outside_u)
+        compute_end_time = time.time()
+        print(f"Time taken for compute control for outside: {(compute_end_time - compute_start_time)*1000}")
+        print("######################################################")
+
+        IPython.embed()
 
         ######## MULTIPLE ########
         timing_data = []
@@ -196,7 +178,6 @@ class NCBFTrackingNode:
             IPython.embed()
             
             timing_data.append([torch_time, numpy_time])
->>>>>>> c2524c4a458fc780bfd4f8c8d8036f43fbab7ba0
 
         # timing_array = np.array(timing_data)
 
