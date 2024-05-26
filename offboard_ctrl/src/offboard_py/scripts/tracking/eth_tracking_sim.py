@@ -74,7 +74,7 @@ class ETHTrackingNode:
         self.hover_thrust = None
 
         ### Goal Position ###
-        takeoff_pose = np.array([0, 0, self.takeoff_height])
+        takeoff_pose = np.array([1, 1, self.takeoff_height])
 
         ### Takeoff Controller ###
         Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
@@ -238,8 +238,8 @@ class ETHTrackingNode:
             link_state = LinkState()
             link_state.pose.position.x = -0.001995
             link_state.pose.position.y = 0.000135
-            link_state.pose.position.z = 0.721659
-            link_state.link_name = 'danaus12_pend::pendulum'
+            link_state.pose.position.z = 0.531659
+            link_state.link_name = 'danaus12_old::pendulum'
             link_state.reference_frame = 'base_link'
             _ = self.set_link_state_service(link_state)
 
@@ -257,9 +257,9 @@ class ETHTrackingNode:
                     rospy.loginfo("Pendulum position has been less than 0.05m for 0.5 seconds straight.")
                     
                     # Turn gravity on!
-                    curr_pend_properties = get_link_properties_service(link_name='danaus12_pend::pendulum')
+                    curr_pend_properties = get_link_properties_service(link_name='danaus12_old::pendulum')
                     new_pend_properties = SetLinkPropertiesRequest(
-                                            link_name='danaus12_pend::pendulum',
+                                            link_name='danaus12_old::pendulum',
                                             gravity_mode=True,
                                             com=curr_pend_properties.com,
                                             mass=curr_pend_properties.mass,
@@ -310,8 +310,9 @@ class ETHTrackingNode:
                 link_state = LinkState()
                 link_state.pose.position.x = -0.001995
                 link_state.pose.position.y = 0.000135
-                link_state.pose.position.z = 0.721659
-                link_state.link_name = 'danaus12_pend::pendulum'
+                # link_state.pose.position.z = 0.721659
+                link_state.pose.position.z = 0.531659
+                link_state.link_name = 'danaus12_old::pendulum'
                 link_state.reference_frame = 'base_link'
                 _ = self.set_link_state_service(link_state)
                 
@@ -416,8 +417,8 @@ if __name__ == "__main__":
     print("")
     
     L = 0.5            # x  y  z  x_dot y_dot z_dot yaw pitch roll r s r_dot s_dot
-    Q = 1.0 * np.diag([2, 2, 2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])      # With pendulum
-    # Q = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])      # With pendulum LOL
+    # Q = 1.0 * np.diag([2, 2, 2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])      # With pendulum
+    Q = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])      # With pendulum LOL
     R = 1.0 * np.diag([7, 7, 7, 1])
 
     eth_node = ETHTrackingNode(mode, hz, track_type, mass, L, Q, R, 

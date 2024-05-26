@@ -81,8 +81,8 @@ class PendulumCB:
         return np.array([r, s])
     
     def _get_rs_pose_sim(self, vehicle_pose):
-        # response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')    # Position changes with base_link frame
-        response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='')
+        # response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='base_link')    # Position changes with base_link frame
+        response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='')
         r = response.link_state.pose.position.x - vehicle_pose[0] #(vehicle_pose[0] -0.001995)
         s = response.link_state.pose.position.y - vehicle_pose[1] #(vehicle_pose[1] + 0.000135)
         # r = vehicle_pose[0] - response.link_state.pose.position.x
@@ -119,8 +119,8 @@ class PendulumCB:
             raise ValueError('Invalid mode')
 
     def _get_rs_vel_sim(self, vehicle_vel):
-        # response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='base_link')    # Position changes with base_link frame
-        response = self.pose_sub(link_name='danaus12_pend::pendulum', reference_frame='')
+        # response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='base_link')    # Position changes with base_link frame
+        response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='')
         r = response.link_state.twist.linear.x - vehicle_vel[0]
         s = response.link_state.twist.linear.y - vehicle_vel[1]
         return np.array([r, s])
@@ -163,8 +163,8 @@ if __name__ == "__main__":
 
     rospy.init_node('pendulum_state_cb', anonymous=True)
     
-    pend_cb = PendulumCB("real")
-    quad_cb = VehicleStateCB("real")
+    pend_cb = PendulumCB("sim")
+    quad_cb = VehicleStateCB("sim")
     rate = rospy.Rate(100)
 
     while not rospy.is_shutdown():
@@ -172,5 +172,6 @@ if __name__ == "__main__":
         quad_vel = quad_cb.get_xyz_velocity()
         pend_pose = pend_cb.get_rs_pose(quad_pose)
         pend_vel = pend_cb.get_rs_vel(quad_vel)
+        print(f"{pend_pose=}")
         
         rate.sleep()

@@ -1,8 +1,8 @@
-prefix=/home/oem/danaus_ros_ws/offboard_ctrl/devel
+prefix=/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel
 
 Name: vicon_bridge
 Description: Description of vicon_bridge
 Version: 1.0.1
-Cflags: -I/home/oem/danaus_ros_ws/offboard_ctrl/devel/include
+Cflags: -I/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel/include
 Libs: -L${prefix}/lib 
 Requires: dynamic_reconfigure geometry_msgs message_runtime roscpp
