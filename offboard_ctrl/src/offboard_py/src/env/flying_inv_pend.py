@@ -10,21 +10,39 @@ g = 9.81
 
 def create_flying_param_dict(args=None):
 	# Args: for modifying the defaults through args
+	# param_dict = {
+	# 	"m": 0.700,
+	# 	"J_xx": 0.00327227,
+	# 	"J_xy": 0.00000791,
+	# 	"J_xz": 0.00009286,
+	# 	"J_yy": 0.00319928,
+	# 	"J_yz": 0.00005426,
+	# 	"J_zz": 0.00529553,
+	# 	"angle": 0.9222,	# 52.84 degrees	(rotor arm to x-axis)
+	# 	"r1": 0.11053858,	# Rotor arm length for rotors 1 (FR) and 3 (RL)
+	# 	"r2": 0.11232195, 	# Rotor arm length for rotors 2 (FL) and 4 (RR)
+	# 	"m_s": 0.0183,		# Moment scale for 2204-2300KV motors
+	# 	"m_p": 0.046,		# Mass of pendulum
+	# 	"L_p": 0.69, 		# This is the CoM. Total length: 1.085m
+	# 	"max_thrust": 4,	# Max thrust for each motor - set to 1200g at 100% throttle
+	# 	"min_thrust": 0.00,	# Min thrust for each motor - set to 0g at 0% throttle
+	# 	'delta_safety_limit': math.pi / 4  # should be <= math.pi/4
+	# }
 	param_dict = {
-		"m": 0.700,
-		"J_xx": 0.00327227,
-		"J_xy": 0.00000791,
-		"J_xz": 0.00009286,
-		"J_yy": 0.00319928,
-		"J_yz": 0.00005426,
-		"J_zz": 0.00529553,
+		"m": 0.67634104,
+		"J_xx": 0.00320868,
+		"J_xy": 0.00011707,
+		"J_xz": 0.00004899,
+		"J_yy": 0.00288707,
+		"J_yz": 0.00006456,
+		"J_zz": 0.00495141,
 		"angle": 0.9222,	# 52.84 degrees	(rotor arm to x-axis)
 		"r1": 0.11053858,	# Rotor arm length for rotors 1 (FR) and 3 (RL)
 		"r2": 0.11232195, 	# Rotor arm length for rotors 2 (FL) and 4 (RR)
 		"m_s": 0.0183,		# Moment scale for 2204-2300KV motors
-		"m_p": 0.046,		# Mass of pendulum
-		"L_p": 0.69, 		# This is the CoM. Total length: 1.085m
-		"max_thrust": 1.20,	# Max thrust for each motor - set to 1200g at 100% throttle
+		"m_p": 0.03133884,		# Mass of pendulum
+		"L_p": 0.5*2, 		# This is the LENGTH OF PENDULUM. Total length: 1.085m
+		"max_thrust": 4,	# Max thrust for each motor - set to 1200g at 100% throttle
 		"min_thrust": 0.00,	# Min thrust for each motor - set to 0g at 0% throttle
 		'delta_safety_limit': math.pi / 4  # should be <= math.pi/4
 	}
@@ -101,14 +119,21 @@ class XDot(nn.Module):
 		self.__dict__.update(param_dict)  # __dict__ holds and object's attributes
 		self.device = device
 		self.i = self.state_index_dict
+		# self.J_inv = torch.tensor([	# NOTE: danaus12_newold
+		# 	[305.7518,  -0.6651,  -5.3547],
+		# 	[ -0.6651, 312.6261,  -3.1916],
+		# 	[ -5.3547,  -3.1916, 188.9651]]).to(self.device)
+		self.J_inv = torch.tensor([	# NOTE: danaus12_old
+			[312.15873073, -12.59256833,  -2.92435488],
+			[-12.59256833, 346.98093554,  -4.39959108],
+			[ -2.92435488,  -4.39959108, 202.04897226]]).to(self.device)
 
 	def forward(self, x, u):
-		# x: bs x 10, u: bs x 4
-		# The way these are implemented should be batch compliant
+		"""
+		Batch-compliant. Assume x is (bs, x_dim) and u is (bs, u_dim).
+		"""
 
-		# Pre-computations
-		# Compute the rotation matrix from quad to global frame
-		# Extract the k_{x,y,z}
+		### Rotational Matrix ###
 		gamma = x[:, self.i["gamma"]]
 		beta = x[:, self.i["beta"]]
 		alpha = x[:, self.i["alpha"]]
@@ -117,7 +142,6 @@ class XDot(nn.Module):
 		theta = x[:, self.i["theta"]]
 		dphi = x[:, self.i["dphi"]]
 		dtheta = x[:, self.i["dtheta"]]
-		# print(f"{x.shape[0]=}")
 
 		R = torch.zeros((x.shape[0], 3, 3), device=self.device) # is this the correct rotation?
 
@@ -128,15 +152,12 @@ class XDot(nn.Module):
 		sin_beta = torch.sin(beta)
 		sin_gamma = torch.sin(gamma)
 
-		# R[:, 0, 0] = torch.cos(alpha)*torch.cos(beta)
-		# R[:, 0, 1] = torch.cos(alpha)*torch.sin(beta)*torch.sin(gamma) - torch.sin(alpha)*torch.cos(gamma)
-		# R[:, 0, 2] = torch.cos(alpha)*torch.sin(beta)*torch.cos(gamma) + torch.sin(alpha)*torch.sin(gamma)
-		# R[:, 1, 0] = torch.sin(alpha)*torch.cos(beta)
-		# R[:, 1, 1] = torch.sin(alpha)*torch.sin(beta)*torch.sin(gamma) + torch.cos(alpha)*torch.cos(gamma)
-		# R[:, 1, 2] = torch.sin(alpha)*torch.sin(beta)*torch.cos(gamma) - torch.cos(alpha)*torch.sin(gamma)
-		# R[:, 2, 0] = -torch.sin(beta)
-		# R[:, 2, 1] = torch.cos(beta)*torch.sin(gamma)
-		# R[:, 2, 2] = torch.cos(beta)*torch.cos(gamma)
+		cos_alpha = torch.cos(alpha)
+		cos_beta = torch.cos(beta)
+		cos_gamma = torch.cos(gamma)
+		sin_alpha = torch.sin(alpha)
+		sin_beta = torch.sin(beta)
+		sin_gamma = torch.sin(gamma)
 
 		R[:, 0, 0] = cos_alpha*cos_beta
 		R[:, 0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
@@ -154,25 +175,13 @@ class XDot(nn.Module):
 
 		F = (u[:, 0] + self.M*g)
 
-		###### Computing state derivatives
-		# IPython.embed()
-  
-		# J = torch.tensor([
-		# 	[self.J_xx, self.J_xy, self.J_xz],
-		# 	[self.J_xy, self.J_yy, self.J_yz],
-		# 	[self.J_xz, self.J_yz, self.J_zz]]).to(self.device)
-		# norm_torques = u[:, 1:]@torch.inverse(J)
-		J_inv = torch.tensor([
-			[305.7518,  -0.6651,  -5.3547],
-			[ -0.6651, 312.6261,  -3.1916],
-			[ -5.3547,  -3.1916, 188.9651]]).to(self.device)	# for faster computation
-		norm_torques = u[:, 1:]@J_inv
+		###################################
+		### Computing state derivatives ###
+        ###################################
+		norm_torques = u[:, 1:]@self.J_inv
 		
 		ddquad_angles = torch.bmm(R, norm_torques[:, :, None]) # (N, 3, 1)
 		ddquad_angles = ddquad_angles[:, :, 0]
-		# ddgamma = (1.0/self.J_x)*ddquad_angles[:, 0]
-		# ddbeta = (1.0/self.J_y)*ddquad_angles[:, 1]
-		# ddalpha = (1.0/self.J_z)*ddquad_angles[:, 2]
 
 		ddgamma = ddquad_angles[:, 0]
 		ddbeta = ddquad_angles[:, 1]
@@ -182,9 +191,6 @@ class XDot(nn.Module):
 		cos_theta = torch.cos(theta)
 		sin_phi = torch.sin(phi)
 		sin_theta = torch.sin(theta)
-
-		# ddphi = (3.0)*(k_y*torch.cos(phi) + k_z*torch.sin(phi))/(2*self.M*self.L_p*torch.cos(theta))*F + 2*dtheta*dphi*torch.tan(theta)
-		# ddtheta = (3.0*(-k_x*torch.cos(theta)-k_y*torch.sin(phi)*torch.sin(theta) + k_z*torch.cos(phi)*torch.sin(theta))/(2.0*self.M*self.L_p))*F - torch.square(dphi)*torch.sin(theta)*torch.cos(theta)
 
 		ddphi = (3.0)*(k_y*cos_phi + k_z*sin_phi)/(2*self.M*self.L_p*cos_theta)*F + 2*dtheta*dphi*torch.tan(theta)
 		ddtheta = (3.0*(-k_x*cos_theta-k_y*sin_phi*sin_theta + k_z*cos_phi*sin_theta)/(2.0*self.M*self.L_p))*F - torch.square(dphi)*sin_theta*cos_theta

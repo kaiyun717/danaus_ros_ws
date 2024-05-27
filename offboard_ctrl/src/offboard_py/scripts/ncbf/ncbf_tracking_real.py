@@ -33,7 +33,7 @@ from src.callbacks.fcu_modes import FcuModes
 
 from src.neural_cbf.utils import load_phi_and_params
 from src.neural_cbf.ncbf_numpy_wrapper import NCBFNumpy
-from src.neural_cbf.ncbf_controller import NCBFController
+from src.neural_cbf.ncbf_controller_torque import NCBFController
 from src.env.deploy_flying_inv_pend import FlyingInvertedPendulumEnv
 from src.controllers.torque_lqr import TorqueLQR
 

@@ -12,31 +12,36 @@ import collections
 
 class PendulumCB:
     def __init__(self, mode, vehicle, L_p=0.69) -> None:
+        """
+        Callback class for the pendulum state.
+
+        mode: 'sim' or 'real'
+        vehicle: 'danaus12_old' or 'danaus12_newold'
+        L_p: CoM of the pendulum wrt the pivot point (base)
+        """
+        ##### Parameters #####
+        self.mode = mode
+        self.L_p = L_p
+        self.vehicle = vehicle
+
+        ##### History Info #####
+        # The previous pose/ang of the pendulum are used to calculate the velocities.
         self.pose = PoseStamped()
         self.prev_pose = PoseStamped()
         self.prev_pend_ang = np.array([0, 0])
         
         self.avg_vel = np.array([0, 0])
         self.avg_pend_vel = np.array([0, 0])
-        
+        # Moving average weight
         self.w_avg = 0.5
 
-        self.vehicle = vehicle
-
         if mode == 'sim':
-            # self.pose_sub = rospy.Subscriber('pendulum/pose', PoseStamped, self.pose_cb)
             self.pose_sub = rospy.ServiceProxy('/gazebo/get_link_state', GetLinkState)
         elif mode == 'real':
             self.pose_sub = rospy.Subscriber('vicon/pose/pend/pend', PoseStamped, self.pose_cb)
         else:
             raise ValueError('Invalid mode')
 
-        # self.rs_vel_pub = rospy.Publisher('pendulum/rs_vel', TwistStamped, queue_size=10)
-        # self.rs_vel_avg_pub = rospy.Publisher('pendulum/rs_vel_avg', TwistStamped, queue_size=10)
-
-        self.L_p = L_p
-
-        self.mode = mode
         self.dq_len = 10
         self.pose_deque = collections.deque(maxlen=self.dq_len)
 
@@ -45,25 +50,11 @@ class PendulumCB:
         self.prev_pose = self.pose
         self.pose = msg
 
-    def get_local_pose(self):
-        return self.pose
-    
-    def get_rel_pose(self, vehicle_pose: PoseStamped):
-        r = self.pose.pose.position.x - vehicle_pose.pose.position.x
-        s = self.pose.pose.position.y - vehicle_pose.pose.position.y
-        dz = self.pose.pose.position.z - vehicle_pose.pose.position.z
-
-        pitch_rad = math.atan2(r, dz)
-        roll_rad = math.atan2(s, dz)
-
-        if abs(roll_rad) > 20 / 180 * math.pi:
-            roll_rad = 20 / 180 * math.pi * roll_rad / abs(roll_rad)
-
-        if abs(pitch_rad) > 20 / 180 * math.pi:
-            pitch_rad = 20 / 180 * math.pi * pitch_rad / abs(pitch_rad)
-        return r, s, dz, pitch_rad, roll_rad
-
     def get_rs_pose(self, vehicle_pose=None):
+        """
+        Get the position of the pendulum wrt the pivot point (base).
+        The pivot point is given as the `vehicle_pose`.
+        """
         if self.mode == 'sim':
             return self._get_rs_pose_sim(vehicle_pose)
         elif self.mode == 'real':
@@ -72,48 +63,52 @@ class PendulumCB:
             raise ValueError('Invalid mode')
     
     def _get_rs_pose_real(self, vehicle_pose):
-        # r = self.pose.pose.position.x - vehicle_pose.pose.position.x
-        # s = self.pose.pose.position.y - vehicle_pose.pose.position.y
+        """
+        RS pose for real-world experiments.
+        """
         r = self.pose.pose.position.x - vehicle_pose[0]
         s = self.pose.pose.position.y - vehicle_pose[1]
         if rospy.Time.now() - self.pose.header.stamp > rospy.Duration(0.2):
             rospy.logwarn_throttle(1, "Pendulum pose is too old!")
             return None
-        # rospy.loginfo(f"Position: r: {r}, s: {s}")
         return np.array([r, s])
     
     def _get_rs_pose_sim(self, vehicle_pose):
-        # response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='base_link')    # Position changes with base_link frame
+        """
+        RS pose for simulation.
+        """
         response = self.pose_sub(link_name=self.vehicle+'::pendulum', reference_frame='')
         r = response.link_state.pose.position.x - vehicle_pose[0] #(vehicle_pose[0] -0.001995)
         s = response.link_state.pose.position.y - vehicle_pose[1] #(vehicle_pose[1] + 0.000135)
-        # print(f"r,s={r,s}")
-        # r = vehicle_pose[0] - response.link_state.pose.position.x
-        # s = vehicle_pose[1] - response.link_state.pose.position.y
         return np.array([r, s])
     
     def get_rs_ang(self, vehicle_pose=None):
+        """
+        RS angles for the pendulum wrt the pivot point (base).
+        `roll` is about the y-axis and `pitch` is about the x-axis.
+        `pitch` corresponds to `r`. If `r` is positive, then `pitch` is positive.
+        `roll` corresponds to `s`. If `s` is positive, then `roll` is negative.
+        """
         rs_pose = self.get_rs_pose(vehicle_pose)
-        # xi = np.sqrt(self.L_p**2 - rs_pose[0]**2 - rs_pose[1]**2)
-        # roll = np.arctan2(rs_pose[1], xi)       # Roll is about the x-axis. Thus, use y and z.
-        # pitch = np.arctan2(rs_pose[0], xi)      # Pitch is about the y-axis. Thus, use x and z.
-        roll = rs_pose[1] / self.L_p 
-        pitch = rs_pose[0] / self.L_p
-        return np.array([roll, pitch])
+        xi = np.sqrt(self.L_p**2 - rs_pose[0]**2 - rs_pose[1]**2)
+        pitch = np.arctan2(rs_pose[0], xi)      # Pitch is about the y-axis. Thus, use x and z.
+        roll = np.arctan2(-rs_pose[1], xi)       # Roll is about the x-axis. Thus, use y and z.
+        return np.array([pitch, roll])
 
     def get_rs_ang_vel(self, vehicle_pose=None, vehicle_vel=None):
+        """
+        RS angular velocities for the pendulum wrt the pivot point (base).
+        (Same logic as angles also applies for the angular velocities.) 
+        """
         rs_vel = self.get_rs_vel(vehicle_vel)
-        
-        # current_time = self.pose.header.stamp.to_sec()
-        # prev_time = self.prev_pose.header.stamp.to_sec()
-        # dt = current_time - prev_time
-        # if dt < 1e-5:
-        #     print("Time difference is too small!")
-        #     return np.array([0, 0])
-        rs_ang_vel = rs_vel.flatten()/self.L_p
-        return np.array([rs_ang_vel[1], rs_ang_vel[0]])
+        pitch_dot = rs_vel[0]/self.L_p
+        roll_dot = -rs_vel[1]/self.L_p
+        return np.array([pitch_dot, roll_dot])
     
     def get_rs_vel(self, vehicle_vel=None, dt=None):
+        """
+        RS velocities for the pendulum wrt the pivot point (base).
+        """
         if self.mode == 'sim':
             return self._get_rs_vel_sim(vehicle_vel)
         elif self.mode == 'real':
@@ -122,13 +117,20 @@ class PendulumCB:
             raise ValueError('Invalid mode')
 
     def _get_rs_vel_sim(self, vehicle_vel):
+        """
+        RS velocities for the pendulum in simulation.
+        """
         # response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='base_link')    # Position changes with base_link frame
-        response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='')
+        response = self.pose_sub(link_name=self.vehicle+'::pendulum', reference_frame='')
         r = response.link_state.twist.linear.x - vehicle_vel[0]
         s = response.link_state.twist.linear.y - vehicle_vel[1]
         return np.array([r, s])
 
     def _get_rs_vel_real(self, vehicle_vel):
+        """
+        RS velocities for the pendulum in real-world experiments.
+        We use an moving average to smoothen out the velocity calculations.
+        """
         # if len(self.pose_deque) == self.dq_len:
         #     self.prev_pose = self.pose_deque.popleft()
         # else:

@@ -88,14 +88,14 @@ class ETHTrackingNode:
         ### Takeoff Controller ###
         Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
         R_takeoff = 1.0 * np.diag([10, 10, 10, 1])
-        self.takeoff_cont = ConstantPositionTracker(self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
+        self.takeoff_cont = ConstantPositionTracker("rs_og", self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
         self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
         self.takeoff_goal = self.takeoff_cont.xgoal
         self.takeoff_input = self.takeoff_cont.ugoal
 
         ### Tracking Controller ###
         if self.track_type == "constant":
-            self.cont = ConstantPositionTracker(self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
+            self.cont = ConstantPositionTracker("rs_og", self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
             self.cont_K_inf = self.cont.infinite_horizon_LQR(self.lqr_itr)
             self.xgoal = self.cont.xgoal
             self.ugoal = self.cont.ugoal
@@ -208,29 +208,6 @@ class ETHTrackingNode:
         
         rospy.loginfo("Takeoff pose achieved!")
 
-    def _pend_upright_real(self, req_time=0.5, tol=0.05):
-        consecutive_time = rospy.Duration(0.0)
-        start_time = rospy.Time.now()
-
-        while not rospy.is_shutdown():
-            # Get the position of the pendulum
-            pendulum_position = self.pend_cb.get_rs_pose()
-
-            # Calculate the norm of the position
-            position_norm = np.linalg.norm(pendulum_position)
-
-            # Check if the norm is less than 0.05m
-            if position_norm < tol:
-                consecutive_time += rospy.Time.now() - start_time
-                if consecutive_time >= rospy.Duration(req_time):
-                    rospy.loginfo("Pendulum position has been less than 0.05m for 0.5 seconds straight.")
-                    return True
-            else:
-                consecutive_time = rospy.Duration(0.0)
-                start_time = rospy.Time.now()
-
-            self.rate.sleep()
-    
     def _pend_upright_sim(self, req_time=0.5, tol=0.05):
         get_link_properties_service = rospy.ServiceProxy('/gazebo/get_link_properties', GetLinkProperties)
         self.set_link_state_service = rospy.ServiceProxy('/gazebo/set_link_state', SetLinkState)
@@ -411,6 +388,7 @@ if __name__ == "__main__":
     parser.add_argument("--lqr_itr", type=int, default=100000, help="Number of iterations for Infinite-Horizon LQR")
     parser.add_argument("--cont_duration", type=int, default=20, help="Duration for which the controller should run (in seconds)")
     parser.add_argument("--vehicle", type=str)
+    parser.add_argument("--cont_type", type=str, help="Either rs or tp")    # rs: r and s, tp: theta and phi
 
     args = parser.parse_args()
     mode = args.mode
@@ -422,6 +400,7 @@ if __name__ == "__main__":
     lqr_itr = args.lqr_itr
     cont_duration = args.cont_duration
     vehicle = args.vehicle
+    cont_type = args.cont_type
 
     print("#####################################################")
     print("## ETH Tracking Node for Constant Position Started ##")
