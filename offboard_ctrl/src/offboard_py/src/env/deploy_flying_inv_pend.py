@@ -128,7 +128,11 @@ class FlyingInvertedPendulumEnv:
         
         ddtheta = (3.0*(-k_x*cos_theta-k_y*sin_phi*sin_theta + k_z*cos_phi*sin_theta)*(self.M*self.g)/(2.0*self.M*self.L_p)) \
                 - np.square(dphi)*sin_theta*cos_theta
+<<<<<<< HEAD
+        
+=======
 
+>>>>>>> ee825d96497dcb121072c5ae3100b2866b8d07b6
         # ddphi = (3.0) * (k_y * np.cos(phi) + k_z * np.sin(phi)) * (self.M * self.g) / (
         #             2 * self.M * self.L_p * np.cos(theta)) + 2 * dtheta * dphi * np.tan(theta)
 
@@ -228,7 +232,11 @@ class FlyingInvertedPendulumEnv:
 
         ddphi = (3.0) * (k_y * cos_phi + k_z * sin_phi) / (2 * self.M * self.L_p * cos_theta)
         ddtheta = (3.0*(-k_x*cos_theta-k_y*sin_phi*sin_theta + k_z*cos_phi*sin_theta)/(2.0*self.M*self.L_p))
+<<<<<<< HEAD
+        
+=======
 
+>>>>>>> ee825d96497dcb121072c5ae3100b2866b8d07b6
         # ddphi = (3.0)*(k_y*np.cos(phi) + k_z*np.sin(phi))/(2*self.M*self.L_p*np.cos(theta))
         # ddtheta = (3.0*(-k_x*np.cos(theta)-k_y*np.sin(phi)*np.sin(theta) + k_z*np.cos(phi)*np.sin(theta))/(2.0*self.M*self.L_p))
 
