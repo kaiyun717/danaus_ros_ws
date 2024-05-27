@@ -47,6 +47,17 @@ class NCBFController:
             [ 0.06199986,  0.70380981,  0.92851892, -3.3879707 ],
             [ 0.06300014,  0.70380981, -0.92851892,  3.4426304 ],
             [ 0.06199986, -0.70380981,  0.92851892,  3.3879707 ]])
+        
+        self.J = np.array([	# NOTE: danaus12_old
+			[0.00320868, 0.00011707,  0.00004899],
+			[0.00011707, 0.00288707,  0.00006456],
+			[0.00004899, 0.00006456,  0.00495141]])
+        
+        self.dt = self.env.dt
+        self.control_conversion = np.vstack((
+                            np.array([1, 0, 0, 0]),
+                            np.hstack((np.zeros((3,1)), self.J/self.dt))))
+        self.control_conversion_inv = np.linalg.inv(self.control_conversion)
 
         #############################
         ### Mass of the Quadrotor ###
@@ -109,7 +120,7 @@ class NCBFController:
 
         # G <= h
         G = np.zeros((10,9))
-        G[0, :4] = lhs
+        G[0, :4] = lhs @ self.control_conversion
         G[0, -1] = -1.0
         G[1:5, 4:8] = -np.eye(4)
         G[5:9, 4:8] = np.eye(4)
@@ -120,7 +131,7 @@ class NCBFController:
         h[5:9, 0] = 1.0
 
         A = np.zeros((4, 9))
-        A[:4, :4] = -np.eye(4)
+        A[:4, :4] = -self.control_conversion
         A[:4, 4:8] = self.mixer
         b = np.array([self.M*g, 0, 0, 0])[:, None]
 
