@@ -84,29 +84,56 @@ class FlyingInvertedPendulumEnv:
         dphi = x[:, self.i["dphi"]]
         dtheta = x[:, self.i["dtheta"]]
 
-        
+        cos_alpha = np.cos(alpha)
+        cos_beta = np.cos(beta)
+        cos_gamma = np.cos(gamma)
+        sin_alpha = np.sin(alpha)
+        sin_beta = np.sin(beta)
+        sin_gamma = np.sin(gamma)
 
         R = np.zeros((3, 3))
-        R[0, 0] = np.cos(alpha)*np.cos(beta)
-        R[0, 1] = np.cos(alpha)*np.sin(beta)*np.sin(gamma) - np.sin(alpha)*np.cos(gamma)
-        R[0, 2] = np.cos(alpha)*np.sin(beta)*np.cos(gamma) + np.sin(alpha)*np.sin(gamma)
-        R[1, 0] = np.sin(alpha)*np.cos(beta)
-        R[1, 1] = np.sin(alpha)*np.sin(beta)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)
-        R[1, 2] = np.sin(alpha)*np.sin(beta)*np.cos(gamma) - np.cos(alpha)*np.sin(gamma)
-        R[2, 0] = -np.sin(beta)
-        R[2, 1] = np.cos(beta)*np.sin(gamma)
-        R[2, 2] = np.cos(beta)*np.cos(gamma)
+        R[0, 0] = cos_alpha*cos_beta
+        R[0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
+        R[0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
+        R[1, 0] = sin_alpha*cos_beta
+        R[1, 1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
+        R[1, 2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
+        R[2, 0] = -sin_beta
+        R[2, 1] = cos_beta*sin_gamma
+        R[2, 2] = cos_beta*cos_gamma
+
+        # R = np.zeros((3, 3))
+        # R[0, 0] = np.cos(alpha)*np.cos(beta)
+        # R[0, 1] = np.cos(alpha)*np.sin(beta)*np.sin(gamma) - np.sin(alpha)*np.cos(gamma)
+        # R[0, 2] = np.cos(alpha)*np.sin(beta)*np.cos(gamma) + np.sin(alpha)*np.sin(gamma)
+        # R[1, 0] = np.sin(alpha)*np.cos(beta)
+        # R[1, 1] = np.sin(alpha)*np.sin(beta)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)
+        # R[1, 2] = np.sin(alpha)*np.sin(beta)*np.cos(gamma) - np.cos(alpha)*np.sin(gamma)
+        # R[2, 0] = -np.sin(beta)
+        # R[2, 1] = np.cos(beta)*np.sin(gamma)
+        # R[2, 2] = np.cos(beta)*np.cos(gamma)
 
         k_x = R[0, 2]
         k_y = R[1, 2]
         k_z = R[2, 2]
 
         ###### Computing state derivatives
-        ddphi = (3.0) * (k_y * np.cos(phi) + k_z * np.sin(phi)) * (self.M * self.g) / (
-                    2 * self.M * self.L_p * np.cos(theta)) + 2 * dtheta * dphi * np.tan(theta)
+        cos_phi = np.cos(phi)
+        cos_theta = np.cos(theta)
+        sin_phi = np.sin(phi)
+        sin_theta = np.sin(theta)
 
-        ddtheta = (3.0*(-k_x*np.cos(theta)-k_y*np.sin(phi)*np.sin(theta) + k_z*np.cos(phi)*np.sin(theta))*(self.M*self.g)/(2.0*self.M*self.L_p)) \
-                - np.square(dphi)*np.sin(theta)*np.cos(theta)
+        ddphi = (3.0) * (k_y * cos_phi + k_z * sin_phi) * (self.M * self.g) / (
+                    2 * self.M * self.L_p * cos_theta) + 2 * dtheta * dphi * np.tan(theta)
+        
+        ddtheta = (3.0*(-k_x*cos_theta-k_y*sin_phi*sin_theta + k_z*cos_phi*sin_theta)*(self.M*self.g)/(2.0*self.M*self.L_p)) \
+                - np.square(dphi)*sin_theta*cos_theta
+        
+        # ddphi = (3.0) * (k_y * np.cos(phi) + k_z * np.sin(phi)) * (self.M * self.g) / (
+        #             2 * self.M * self.L_p * np.cos(theta)) + 2 * dtheta * dphi * np.tan(theta)
+
+        # ddtheta = (3.0*(-k_x*np.cos(theta)-k_y*np.sin(phi)*np.sin(theta) + k_z*np.cos(phi)*np.sin(theta))*(self.M*self.g)/(2.0*self.M*self.L_p)) \
+        #         - np.square(dphi)*np.sin(theta)*np.cos(theta)
 
         ddx = k_x*self.g
         ddy = k_y*self.g
@@ -145,16 +172,34 @@ class FlyingInvertedPendulumEnv:
         phi = x[:,self.i["phi"]]
         theta = x[:,self.i["theta"]]
 
+        cos_alpha = np.cos(alpha)
+        cos_beta = np.cos(beta)
+        cos_gamma = np.cos(gamma)
+        sin_alpha = np.sin(alpha)
+        sin_beta = np.sin(beta)
+        sin_gamma = np.sin(gamma)
+
         R = np.zeros((3, 3))
-        R[0, 0] = np.cos(alpha)*np.cos(beta)
-        R[0, 1] = np.cos(alpha)*np.sin(beta)*np.sin(gamma) - np.sin(alpha)*np.cos(gamma)
-        R[0, 2] = np.cos(alpha)*np.sin(beta)*np.cos(gamma) + np.sin(alpha)*np.sin(gamma)
-        R[1, 0] = np.sin(alpha)*np.cos(beta)
-        R[1, 1] = np.sin(alpha)*np.sin(beta)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)
-        R[1, 2] = np.sin(alpha)*np.sin(beta)*np.cos(gamma) - np.cos(alpha)*np.sin(gamma)
-        R[2, 0] = -np.sin(beta)
-        R[2, 1] = np.cos(beta)*np.sin(gamma)
-        R[2, 2] = np.cos(beta)*np.cos(gamma)
+        R[0, 0] = cos_alpha*cos_beta
+        R[0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
+        R[0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
+        R[1, 0] = sin_alpha*cos_beta
+        R[1, 1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
+        R[1, 2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
+        R[2, 0] = -sin_beta
+        R[2, 1] = cos_beta*sin_gamma
+        R[2, 2] = cos_beta*cos_gamma
+
+        # R = np.zeros((3, 3))
+        # R[0, 0] = np.cos(alpha)*np.cos(beta)
+        # R[0, 1] = np.cos(alpha)*np.sin(beta)*np.sin(gamma) - np.sin(alpha)*np.cos(gamma)
+        # R[0, 2] = np.cos(alpha)*np.sin(beta)*np.cos(gamma) + np.sin(alpha)*np.sin(gamma)
+        # R[1, 0] = np.sin(alpha)*np.cos(beta)
+        # R[1, 1] = np.sin(alpha)*np.sin(beta)*np.sin(gamma) + np.cos(alpha)*np.cos(gamma)
+        # R[1, 2] = np.sin(alpha)*np.sin(beta)*np.cos(gamma) - np.cos(alpha)*np.sin(gamma)
+        # R[2, 0] = -np.sin(beta)
+        # R[2, 1] = np.cos(beta)*np.sin(gamma)
+        # R[2, 2] = np.cos(beta)*np.cos(gamma)
 
         k_x = R[0, 2]
         k_y = R[1, 2]
@@ -176,8 +221,16 @@ class FlyingInvertedPendulumEnv:
 
         # print(J_inv, R)
 
-        ddphi = (3.0)*(k_y*np.cos(phi) + k_z*np.sin(phi))/(2*self.M*self.L_p*np.cos(theta))
-        ddtheta = (3.0*(-k_x*np.cos(theta)-k_y*np.sin(phi)*np.sin(theta) + k_z*np.cos(phi)*np.sin(theta))/(2.0*self.M*self.L_p))
+        cos_phi = np.cos(phi)
+        cos_theta = np.cos(theta)
+        sin_phi = np.sin(phi)
+        sin_theta = np.sin(theta)
+
+        ddphi = (3.0) * (k_y * cos_phi + k_z * sin_phi) / (2 * self.M * self.L_p * cos_theta)
+        ddtheta = (3.0*(-k_x*cos_theta-k_y*sin_phi*sin_theta + k_z*cos_phi*sin_theta)/(2.0*self.M*self.L_p))
+        
+        # ddphi = (3.0)*(k_y*np.cos(phi) + k_z*np.sin(phi))/(2*self.M*self.L_p*np.cos(theta))
+        # ddtheta = (3.0*(-k_x*np.cos(theta)-k_y*np.sin(phi)*np.sin(theta) + k_z*np.cos(phi)*np.sin(theta))/(2.0*self.M*self.L_p))
 
         # Including translational motion
         g = np.zeros((16, 4))
