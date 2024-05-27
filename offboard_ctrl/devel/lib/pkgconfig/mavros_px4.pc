@@ -1,4 +1,4 @@
-prefix=/home/oem/danaus_ros_ws/offboard_ctrl/devel
+prefix=/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel
 
 Name: mavros_px4
 Description: Description of mavros_px4

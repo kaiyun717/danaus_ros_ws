@@ -1,12 +1,12 @@
 
 "use strict";
 
-let Markers = require('./Markers.js');
-let Marker = require('./Marker.js');
 let TfDistortInfo = require('./TfDistortInfo.js');
+let Marker = require('./Marker.js');
+let Markers = require('./Markers.js');
 
 module.exports = {
-  Markers: Markers,
-  Marker: Marker,
   TfDistortInfo: TfDistortInfo,
+  Marker: Marker,
+  Markers: Markers,
 };

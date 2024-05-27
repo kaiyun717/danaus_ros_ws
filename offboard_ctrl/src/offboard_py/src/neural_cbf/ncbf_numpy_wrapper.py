@@ -36,13 +36,13 @@ class NCBFNumpy:
             x[:, i] = self._convert_angle_to_negpi_pi_interval(x[:, i])
 
         # torch.cuda.synchronize()
-        start_time = time.time()
+        # start_time = time.time()
 
         x_torch = torch.from_numpy(x.astype("float32")).to(self.device)
         
         # torch.cuda.synchronize()
-        end_time = time.time()
-        print(f"Numpy to torch: {(end_time - start_time)*1000}")
+        # end_time = time.time()
+        # print(f"Numpy to torch: {(end_time - start_time)*1000}")
         # Q: how come we don't have to involve device = gpu?
         # A: because it is set as CPU elsewhere? Yes
 
@@ -57,14 +57,14 @@ class NCBFNumpy:
         phi_torch = self.torch_phi_fn(x_torch)
 
         # torch.cuda.synchronize()
-        start_time = time.time()
+        # start_time = time.time()
 			
         # phi_numpy = phi_torch.detach().cpu().numpy()
         phi_numpy = phi_torch.detach().numpy()
 
         # torch.cuda.synchronize()
-        end_time = time.time()
-        print(f"Torch to numpy: {(end_time - start_time)*1000}")
+        # end_time = time.time()
+        # print(f"Torch to numpy: {(end_time - start_time)*1000}")
 
         return phi_numpy
     
@@ -77,16 +77,16 @@ class NCBFNumpy:
     #     bs = x_torch.shape[0]
     #     x_torch.requires_grad = True
 
-    #     phi_torch = self.torch_phi_fn(x_torch)
+    #     phi_torch = self.torch_phi_fn(x_torch, grad_x=True)
     #     phi_val = torch.sum(phi_torch[:, -1])
     #     phi_val.backward()
     #     phi_grad = x_torch.grad
 
     #     x_torch.requires_grad = False
-    #     phi_grad = phi_grad.detach().cpu().numpy()
+    #     phi_grad = phi_grad.detach().numpy()
     #     phi_grad = np.concatenate((phi_grad, np.zeros((bs, 6))), axis=1)
         
-    #     phi_numpy = phi_torch.detach().cpu().numpy()
+    #     phi_numpy = phi_torch.detach().numpy()
 
     #     return phi_numpy, phi_grad
 

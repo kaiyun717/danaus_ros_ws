@@ -1,2 +1,2 @@
 - setup-file:
-    local-name: /home/oem/danaus_ros_ws/offboard_ctrl/devel/setup.sh
+    local-name: /home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel/setup.sh
