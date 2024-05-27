@@ -1,6 +1,7 @@
 # #!/usr/bin/env python
 
 import rospy
+import argparse
 import numpy as np
 from gazebo_msgs.srv import SetLinkState, GetLinkProperties, SetLinkProperties, SetLinkPropertiesRequest
 from gazebo_msgs.msg import LinkState
@@ -10,13 +11,15 @@ from std_msgs.msg import Float64
 from geometry_msgs.msg import Vector3
 
 from src.callbacks.pend_state_callbacks import PendulumCB
+from src.callbacks.fcu_state_callbacks import VehicleStateCB
 
 
 class PendulumPIDController:
-    def __init__(self):
+    def __init__(self, vehicle):
         rospy.init_node('pendulum_state_controller')
 
-        self.pend_cb = PendulumCB(mode="sim")
+        self.quad_cb = VehicleStateCB(mode="sim")
+        self.pend_cb = PendulumCB(mode="sim", vehicle=vehicle)
 
         self.get_link_state_service = rospy.ServiceProxy('/gazebo/set_link_state', GetLinkState)
         self.get_link_properties_service = rospy.ServiceProxy('/gazebo/get_link_properties', GetLinkProperties)
@@ -25,31 +28,53 @@ class PendulumPIDController:
 
         self.control_rate = rospy.Rate(50)  # Control rate: 50 Hz
 
+        self.vehicle = vehicle
+        if self.vehicle == "danaus12_old":
+            self.pend_z_pose = 0.531659
+            self.mass = 0.67634104 + 0.03133884
+            self.L = 0.5
+        elif self.vehicle == "danaus12_newold":
+            self.pend_z_pose = 0.721659
+            self.pend_z_pose = 0.69
+            self.L = 0.69
+            self.mass = 0.70034104 + 0.046
+
     def control_pendulum(self):
         tol = 0.05
-        req_time = rospy.Duration(0.5)
+        req_time = rospy.Duration(10e4)
 
         consecutive_time = rospy.Duration(0.0)
         start_time = rospy.Time.now()
 
         while not rospy.is_shutdown():
             link_state = LinkState()
-            link_state.link_name = 'danaus12_pend::pendulum'
+            # link_state.pose.position.x = -0.001995
+            # link_state.pose.position.y = 0.000135
+            # link_state.pose.position.x = 0.0
+            # link_state.pose.position.y = 0.0
+            link_state.pose.position.x = 0.001995
+            link_state.pose.position.y = -0.000135
+            link_state.pose.position.z = self.pend_z_pose
+            link_state.link_name = self.vehicle+'::pendulum'
             link_state.reference_frame = 'base_link'
 
-            response = self.set_link_state_service(link_state)
+            _ = self.set_link_state_service(link_state)
 
-            pendulum_position = self.pend_cb.get_rz_pose()
+            quad_xyz = self.quad_cb.get_xyz_pose()
+            pendulum_position = self.pend_cb.get_rs_pose(vehicle_pose=quad_xyz)
 
             # Calculate the norm of the position
             position_norm = np.linalg.norm(pendulum_position)
+            print(f"{quad_xyz=}")
+            print(f"{pendulum_position=}")
+            print(f"{position_norm=}")
 
             # Check if the norm is less than 0.05m
             if position_norm < tol:
                 consecutive_time += rospy.Time.now() - start_time
                 if consecutive_time >= req_time:
                     rospy.loginfo("Pendulum position has been less than 0.05m for 0.5 seconds straight.")
-                    self.reset_gravity(True)
+                    # self.reset_gravity(True)
                     return True
             else:
                 consecutive_time = rospy.Duration(0.0)
@@ -87,8 +112,13 @@ class PendulumPIDController:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--vehicle", type=str)
+    args = parser.parse_args()
+    vehicle = args.vehicle
+
     try:
-        controller = PendulumPIDController()
+        controller = PendulumPIDController(vehicle)
         controller.control_pendulum()
     except rospy.ROSInterruptException:
         pass

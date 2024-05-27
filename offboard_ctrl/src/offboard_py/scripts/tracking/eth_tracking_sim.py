@@ -49,8 +49,10 @@ class ETHTrackingNode:
             self.L = 0.5
         elif self.vehicle == "danaus12_newold":
             self.pend_z_pose = 0.721659
-            self.L = 0.69
-            self.mass = 0.70034104 + 0.046
+            # self.pend_z_pose = 0.69
+            # self.L = 0.69
+            self.L = 0.79
+            self.mass = 0.70034104 + 0.046 #0.03133884
 
         self.mode = mode                        # "sim" or "real"
         self.hz = hz                            # Control Loop Frequency
@@ -71,7 +73,7 @@ class ETHTrackingNode:
 
         ### Subscribers ###
         self.quad_cb = VehicleStateCB(mode=self.mode)
-        self.pend_cb = PendulumCB(mode=self.mode)
+        self.pend_cb = PendulumCB(mode=self.mode, vehicle=vehicle)
         ### Services ###
         self.quad_modes = FcuModes()
         ### Publishers ###
@@ -243,8 +245,10 @@ class ETHTrackingNode:
             self._quad_lqr_controller()     # This is better than takeoff_pose
             
             link_state = LinkState()
-            link_state.pose.position.x = -0.001995
-            link_state.pose.position.y = 0.000135
+            # link_state.pose.position.x = -0.001995
+            # link_state.pose.position.y = 0.000135
+            link_state.pose.position.x = 0.001995
+            link_state.pose.position.y = -0.000135
             link_state.pose.position.z = self.pend_z_pose
             link_state.link_name = self.vehicle+'::pendulum'
             link_state.reference_frame = 'base_link'
@@ -316,8 +320,10 @@ class ETHTrackingNode:
             rospy.loginfo("Setting near origin & upright")
             for _ in range(150):
                 link_state = LinkState()
-                link_state.pose.position.x = -0.001995
-                link_state.pose.position.y = 0.000135
+                # link_state.pose.position.x = -0.001995
+                # link_state.pose.position.y = 0.000135
+                link_state.pose.position.x = 0.001995
+                link_state.pose.position.y = -0.000135
                 link_state.pose.position.z = self.pend_z_pose
                 link_state.link_name = self.vehicle+'::pendulum'
                 link_state.reference_frame = 'base_link'
@@ -424,8 +430,9 @@ if __name__ == "__main__":
     
                         # x  y  z  x_dot y_dot z_dot yaw pitch roll r s r_dot s_dot
     Q = 1.0 * np.diag([2, 2, 2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])      # With pendulum
-    # Q = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])      # With pendulum LOL
     R = 1.0 * np.diag([7, 7, 7, 1])
+    # Q = 1.0 * np.diag([0, 0, 1, 0, 0, 0, 0, 0, 0, 5, 5, 1, 1])      # With pendulum LOL
+    # R = 1.0 * np.diag([0.1, 0.1, 0.1, 1])
 
     eth_node = ETHTrackingNode(vehicle, mode, hz, track_type, Q, R, 
                                takeoff_height=takeoff_height, 

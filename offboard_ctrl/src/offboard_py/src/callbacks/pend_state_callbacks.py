@@ -11,7 +11,7 @@ import collections
 
 
 class PendulumCB:
-    def __init__(self, mode, L_p=0.69) -> None:
+    def __init__(self, mode, vehicle, L_p=0.69) -> None:
         self.pose = PoseStamped()
         self.prev_pose = PoseStamped()
         self.prev_pend_ang = np.array([0, 0])
@@ -20,6 +20,8 @@ class PendulumCB:
         self.avg_pend_vel = np.array([0, 0])
         
         self.w_avg = 0.5
+
+        self.vehicle = vehicle
 
         if mode == 'sim':
             # self.pose_sub = rospy.Subscriber('pendulum/pose', PoseStamped, self.pose_cb)
@@ -82,9 +84,10 @@ class PendulumCB:
     
     def _get_rs_pose_sim(self, vehicle_pose):
         # response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='base_link')    # Position changes with base_link frame
-        response = self.pose_sub(link_name='danaus12_old::pendulum', reference_frame='')
+        response = self.pose_sub(link_name=self.vehicle+'::pendulum', reference_frame='')
         r = response.link_state.pose.position.x - vehicle_pose[0] #(vehicle_pose[0] -0.001995)
         s = response.link_state.pose.position.y - vehicle_pose[1] #(vehicle_pose[1] + 0.000135)
+        # print(f"r,s={r,s}")
         # r = vehicle_pose[0] - response.link_state.pose.position.x
         # s = vehicle_pose[1] - response.link_state.pose.position.y
         return np.array([r, s])
