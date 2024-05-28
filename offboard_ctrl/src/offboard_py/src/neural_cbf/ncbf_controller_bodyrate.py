@@ -80,7 +80,7 @@ class NCBFControllerBodyRate:
         ####################################
         phi_vals = self.cbf_fn.phi_fn(x)  # This is an array of (1, r+1), where r is the degree
         x_next = self.env.rk4_x_dot_open_loop_model(x, u_ref)    # RK4 Implementation
-        next_phi_val = self.cbf_fn.phi_fn(x_next)
+        next_phi_vals = self.cbf_fn.phi_fn(x_next)
 
         ### Outside ###
         if phi_vals[0, -1] > 1e-2:  # Outside
@@ -88,7 +88,7 @@ class NCBFControllerBodyRate:
             eps = self.eps_outside
             stat = 0
         ### On boundary ###
-        elif phi_vals[0, -1] < 0 and next_phi_val[0, -1] >= 0:  # On boundary. Note: cheating way to convert DT to CT
+        elif phi_vals[0, -1] < 0 and next_phi_vals[0, -1] >= 0:  # On boundary. Note: cheating way to convert DT to CT
             print("STATUS: On") # TODO
             eps = self.eps_bdry
             stat = 1
@@ -100,7 +100,7 @@ class NCBFControllerBodyRate:
         else:
             print("STATUS: Inside") # TODO
             stat = 2
-            return u_ref_old, stat, phi_vals[0, -1]
+            return u_ref_old, stat, phi_vals[0, -1], next_phi_vals[0, -1]
 
         ### Control constraints ###
         f_x = self.env._f_model(x)
@@ -155,6 +155,7 @@ class NCBFControllerBodyRate:
 
         u_safe = sol_var[0:4]
         u_safe[0] = u_safe[0]/self.M + g
+        u_safe[3] = 0   # No yaw-rate control
         u_safe = np.reshape(u_safe, (4))
         
-        return u_safe, stat, phi_vals[0, -1]
+        return u_safe, stat, phi_vals[0, -1], next_phi_vals[0, -1]

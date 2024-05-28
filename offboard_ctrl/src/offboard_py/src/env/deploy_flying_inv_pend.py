@@ -81,8 +81,8 @@ class FlyingInvertedPendulumEnv:
 
 		# IPython.embed()
 
-		# if len(x.shape) == 1:
-		#     x = x[None] # (1, 16)
+		if len(x.shape) == 1:
+			x = x[None] # (1, 16)
 		# # print("Inside f")
 		# # IPython.embed()
 		# bs = x.shape[0]
@@ -103,16 +103,18 @@ class FlyingInvertedPendulumEnv:
 		sin_beta = np.sin(beta)
 		sin_gamma = np.sin(gamma)
 
-		R = np.zeros((x.shape[0], 3, 3)) # is this the correct rotation?
-		R[:, 0, 0] = cos_alpha*cos_beta
-		R[:, 0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
-		R[:, 0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
-		R[:, 1, 0] = sin_alpha*cos_beta
-		R[:, 1, 1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
-		R[:, 1, 2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
-		R[:, 2, 0] = -sin_beta
-		R[:, 2, 1] = cos_beta*sin_gamma
-		R[:, 2, 2] = cos_beta*cos_gamma
+		R = np.zeros((3, 3)) # is this the correct rotation?
+		R[0, 0] = cos_alpha*cos_beta
+		R[0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
+		R[0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
+		R[1, 0] = sin_alpha*cos_beta
+		R[1, 1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
+		R[1, 2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
+		R[2, 0] = -sin_beta
+		R[2, 1] = cos_beta*sin_gamma
+		R[2, 2] = cos_beta*cos_gamma
+
+		# IPython.embed()
 
 		k_x = R[0, 2]
 		k_y = R[1, 2]
@@ -156,8 +158,8 @@ class FlyingInvertedPendulumEnv:
 		return f.reshape((16,1))
 
 	def _g_model(self, x):
-		# if len(x.shape) == 1:
-		#     x = x[None] # (1, 16)
+		if len(x.shape) == 1:
+			x = x[None] # (1, 16)
 		# # print("g: returns matrix")
 		# # IPython.embed()
 		# bs = x.shape[0]
@@ -177,16 +179,18 @@ class FlyingInvertedPendulumEnv:
 		sin_gamma = np.sin(gamma)
               
 		R = np.zeros((3, 3))
-		R[:, 0, 0] = cos_alpha*cos_beta
-		R[:, 0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
-		R[:, 0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
-		R[:, 1, 0] = sin_alpha*cos_beta
-		R[:, 1, 1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
-		R[:, 1, 2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
-		R[:, 2, 0] = -sin_beta
-		R[:, 2, 1] = cos_beta*sin_gamma
-		R[:, 2, 2] = cos_beta*cos_gamma
+		R[0, 0] = cos_alpha*cos_beta
+		R[0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
+		R[0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma
+		R[1, 0] = sin_alpha*cos_beta
+		R[1, 1] = sin_alpha*sin_beta*sin_gamma + cos_alpha*cos_gamma
+		R[1, 2] = sin_alpha*sin_beta*cos_gamma - cos_alpha*sin_gamma
+		R[2, 0] = -sin_beta
+		R[2, 1] = cos_beta*sin_gamma
+		R[2, 2] = cos_beta*cos_gamma
 
+		# IPython.embed()
+		
 		k_x = R[0, 2]
 		k_y = R[1, 2]
 		k_z = R[2, 2]
@@ -272,3 +276,36 @@ class FlyingInvertedPendulumEnv:
 
 		return rv, {"motor_impulses": motor_impulses, 
 					"smooth_clamped_motor_impulses": smooth_clamped_motor_impulses}
+
+if __name__ == "__main__":
+	import math
+
+	vehicle = "danaus12_old"
+	dt = 0.01
+	model_param_dict = {
+		"m": 0.67634104,
+		"J_xx": 0.00320868,
+		"J_xy": 0.00011707,
+		"J_xz": 0.00004899,
+		"J_yy": 0.00288707,
+		"J_yz": 0.00006456,
+		"J_zz": 0.00495141,
+		"angle": 0.9222,	# 52.84 degrees	(rotor arm to x-axis)
+		"r1": 0.11053858,	# Rotor arm length for rotors 1 (FR) and 3 (RL)
+		"r2": 0.11232195, 	# Rotor arm length for rotors 2 (FL) and 4 (RR)
+		"m_s": 0.0183,		# Moment scale for 2204-2300KV motors
+		"m_p": 0.03133884,		# Mass of pendulum
+		"L_p": 0.5*2, 		# This is the LENGTH OF PENDULUM. Total length: 1.085m
+		"max_thrust": 4,	# Max thrust for each motor - set to 1200g at 100% throttle
+		"min_thrust": 0.00,	# Min thrust for each motor - set to 0g at 0% throttle
+		'delta_safety_limit': math.pi / 4,  # should be <= math.pi/4,
+		"M": 0.67634104 + 0.03133884
+	}
+	env = FlyingInvertedPendulumEnv(vehicle, dt, model_param_dict)
+
+	x = np.ones((16,1))
+	x = np.reshape(x, (1, -1))
+	x_next = env.rk4_x_dot_open_loop_model(x, np.array([1,2,3,4]).reshape((4,1)))
+
+
+	

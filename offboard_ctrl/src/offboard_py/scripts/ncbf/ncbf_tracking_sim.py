@@ -47,6 +47,7 @@ class NCBFTrackingNode:
                  ckpt_num,
                  mode,
                  hz, 
+                 rk4_hz,
                  track_type,
                  Q, 
                  R,
@@ -73,7 +74,7 @@ class NCBFTrackingNode:
         ### Environment ###
         self.env = FlyingInvertedPendulumEnv(vehicle=vehicle, dt=1/hz, model_param_dict=param_dict, 
                                              dynamics_noise_spread=dynamics_noise_spread)
-        self.env.dt = 1/hz
+        self.env.dt = 1/rk4_hz
         self.ncbf_cont = NCBFControllerBodyRate(vehicle, self.env, self.ncbf_fn, param_dict, eps_bdry=eps_bdry, eps_outside=eps_outside)
 
         ######################
@@ -122,7 +123,7 @@ class NCBFTrackingNode:
 
         ### Subscribers ###
         self.quad_cb = VehicleStateCB(mode=self.mode)
-        self.pend_cb = PendulumCB(mode=self.mode)
+        self.pend_cb = PendulumCB(mode=self.mode, vehicle=self.vehicle)
         ### Services ###
         self.quad_modes = FcuModes()
         ### Publishers ###
@@ -384,8 +385,8 @@ class NCBFTrackingNode:
             
             x_safe, x_nom = self._get_states()
             u_bodyrate = self._quad_lqr_controller(x_nom)
-            u_safe_bodyrate, stat, phi_val = self.ncbf_cont.compute_control(x_safe, np.copy(u_bodyrate))
-            rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Safe: {u_safe_bodyrate.flatten()}\nU Nom: {u_bodyrate.flatten()}\nPhi: {phi_val}, Status\n{stat}")
+            u_safe_bodyrate, stat, phi_val, next_phi_val = self.ncbf_cont.compute_control(x_safe, np.copy(u_bodyrate))
+            rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Safe: {u_safe_bodyrate.flatten()}\nU Nom: {u_bodyrate.flatten()}\nPhi: {phi_val}, Next Phi: {next_phi_val}, Status: {stat}\n")
 
             self._send_attitude_setpoint(u_safe_bodyrate)
             
@@ -409,8 +410,9 @@ if __name__ == "__main__":
     
     ##### Argparse #####
     parser = argparse.ArgumentParser(description="NCBF Tracking Node")
-    parser.add_argument("--mode", type=str, default="real", help="Mode of operation (sim or real)")
+    parser.add_argument("--mode", type=str, default="sim", help="Mode of operation (sim or real)")
     parser.add_argument("--hz", type=int, default=90, help="Frequency of the control loop")
+    parser.add_argument("--rk4_hz", type=int, default=90, help="Frequency of the RK4 integration")
     parser.add_argument("--track_type", type=str, default="constant", help="Type of tracking to be used")
     parser.add_argument("--takeoff_height", type=float, default=1.5, help="Height to takeoff to (in meters)")
     parser.add_argument("--pend_upright_time", type=float, default=0.5, help="Time to keep the pendulum upright")
@@ -430,6 +432,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     mode = args.mode
     hz = args.hz
+    rk4_hz = args.rk4_hz
     track_type = args.track_type
     takeoff_height = args.takeoff_height
     pend_upright_time = args.pend_upright_time
@@ -457,13 +460,13 @@ if __name__ == "__main__":
         R = 1.0 * np.diag([1, 7, 7, 7])
     elif cont_type == "tp":
                            # γ, β, α, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 2, 0.0, 0.0, 0.0, 4.0, 4.0, 0.4, 0.4])
+        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])
         R = 1.0 * np.diag([1, 7, 7, 7])
         
     ncbf_node = NCBFTrackingNode(
         vehicle=vehicle, cont_type=cont_type,
         exp_name=exp_name, ckpt_num=ckpt_num,
-        mode=mode, hz=hz, track_type=track_type, 
+        mode=mode, hz=hz, rk4_hz=rk4_hz, track_type=track_type, 
         Q=Q, R=R,
         eps_bdry=eps_bdry, eps_outside=eps_outside, dynamics_noise_spread=dynamics_noise_spread,
         lqr_cont_type=lqr_cont_type, 
