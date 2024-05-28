@@ -143,22 +143,14 @@ class XDot(nn.Module):
 		dphi = x[:, self.i["dphi"]]
 		dtheta = x[:, self.i["dtheta"]]
 
+		cos_alpha = torch.cos(alpha)
+		cos_beta = torch.cos(beta)
+		cos_gamma = torch.cos(gamma)
+		sin_alpha = torch.sin(alpha)
+		sin_beta = torch.sin(beta)
+		sin_gamma = torch.sin(gamma)
+
 		R = torch.zeros((x.shape[0], 3, 3), device=self.device) # is this the correct rotation?
-
-		cos_alpha = torch.cos(alpha)
-		cos_beta = torch.cos(beta)
-		cos_gamma = torch.cos(gamma)
-		sin_alpha = torch.sin(alpha)
-		sin_beta = torch.sin(beta)
-		sin_gamma = torch.sin(gamma)
-
-		cos_alpha = torch.cos(alpha)
-		cos_beta = torch.cos(beta)
-		cos_gamma = torch.cos(gamma)
-		sin_alpha = torch.sin(alpha)
-		sin_beta = torch.sin(beta)
-		sin_gamma = torch.sin(gamma)
-
 		R[:, 0, 0] = cos_alpha*cos_beta
 		R[:, 0, 1] = cos_alpha*sin_beta*sin_gamma - sin_alpha*cos_gamma
 		R[:, 0, 2] = cos_alpha*sin_beta*cos_gamma + sin_alpha*sin_gamma

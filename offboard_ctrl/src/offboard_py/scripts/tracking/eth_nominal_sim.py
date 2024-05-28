@@ -69,7 +69,6 @@ class ETHTrackingNode:
         self.R = R                              # Input cost matrix
         self.dt = 1/self.hz                     # Time step
         self.lqr_itr = lqr_itr                  # Number of iterations for Infinite-Horizon LQR
-        self.cont_duration = cont_duration      # Duration for which the controller should run (in seconds)
 
         self.nx = 13
         self.nu = 4
@@ -93,7 +92,7 @@ class ETHTrackingNode:
 
         ### Takeoff Controller ###
                                 # γ, β, α, x, y, z, x_dot, y_dot, z_dot, pendulum (4)
-        Q_takeoff = 1.0 * np.diag([0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
+        Q_takeoff = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])      # Without pendulum
         R_takeoff = 1.0 * np.diag([1, 10, 10, 10])
         self.takeoff_cont = ConstantPositionTracker(cont_type, self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
         self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
@@ -293,7 +292,7 @@ class ETHTrackingNode:
         ##### Setting near origin & upright #####
         if self.mode == "sim":
             rospy.loginfo("Setting near origin & upright")
-            for _ in range(150):
+            for _ in range(500):
                 link_state = LinkState()
                 # link_state.pose.position.x = -0.001995
                 # link_state.pose.position.y = 0.000135

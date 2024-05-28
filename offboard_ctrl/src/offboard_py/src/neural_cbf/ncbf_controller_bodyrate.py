@@ -13,8 +13,9 @@ import control
 g = 9.81
 
 
-class NCBFController:
+class NCBFControllerBodyRate:
     def __init__(self, 
+                    vehicle,
                     env, 
                     cbf_fn, 
                     param_dict, 
@@ -48,10 +49,13 @@ class NCBFController:
             [ 0.06300014,  0.70380981, -0.92851892,  3.4426304 ],
             [ 0.06199986, -0.70380981,  0.92851892,  3.3879707 ]])
         
-        self.J = np.array([	# NOTE: danaus12_old
-			[0.00320868, 0.00011707,  0.00004899],
-			[0.00011707, 0.00288707,  0.00006456],
-			[0.00004899, 0.00006456,  0.00495141]])
+        if vehicle == 'danaus12_old':
+            self.J = np.array([	# NOTE: danaus12_old
+                [0.00320868, 0.00011707,  0.00004899],
+                [0.00011707, 0.00288707,  0.00006456],
+                [0.00004899, 0.00006456,  0.00495141]])
+        else:
+            NotImplementedError(f"{vehicle} not implemented in NCBFController")
         
         self.dt = self.env.dt
         self.control_conversion = np.vstack((

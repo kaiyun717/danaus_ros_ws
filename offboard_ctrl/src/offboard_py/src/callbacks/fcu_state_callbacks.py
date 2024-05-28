@@ -55,8 +55,8 @@ class VehicleStateCB:
 
     def velocity_cb(self, msg):
         if self.mode == "sim":
-            pass
-            # self.velocity = msg
+            # pass
+            self.velocity = msg
             # self.velocity.twist = msg.twist[2]
         elif self.mode == "real":
             self.velocity = msg
