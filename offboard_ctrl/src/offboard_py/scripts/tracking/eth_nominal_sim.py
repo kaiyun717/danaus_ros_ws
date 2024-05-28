@@ -408,7 +408,7 @@ if __name__ == "__main__":
         R = 1.0 * np.diag([1, 7, 7, 7])
     elif cont_type == "tp":
                            # γ, β, α, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 2, 0.0, 0.0, 0.0, 4.0, 4.0, 0.4, 0.4])
+        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])
         R = 1.0 * np.diag([1, 7, 7, 7])
 
     eth_node = ETHTrackingNode(vehicle, cont_type, mode, hz, track_type, Q, R, 

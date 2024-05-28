@@ -139,7 +139,7 @@ class NCBFTrackingNode:
 
         ### Takeoff Controller ###
                                 # γ, β, α, x, y, z, x_dot, y_dot, z_dot, pendulum (4)
-        Q_takeoff = 1.0 * np.diag([0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
+        Q_takeoff = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])      # Without pendulum
         R_takeoff = 1.0 * np.diag([1, 10, 10, 10])
         self.takeoff_cont = ConstantPositionTracker(self.cont_type, self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
         self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
