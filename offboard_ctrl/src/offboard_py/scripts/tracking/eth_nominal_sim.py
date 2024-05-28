@@ -424,26 +424,26 @@ if __name__ == "__main__":
     print("#####################################################")
     print("")
 
-    #################################
-    ######### Save the logs #########
-    #################################
+    # #################################
+    # ######### Save the logs #########
+    # #################################
 
-    # curr_dir = os.getcwd()
-    save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs"
+    # # curr_dir = os.getcwd()
+    # save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs"
 
-    # Get current date and time
-    current_time = datetime.datetime.now()
-    # Format the date and time into the desired filename format
-    formatted_time = current_time.strftime("%m%d_%H%M%S-Sim")
-    directory_path = os.path.join(save_dir, formatted_time)
-    os.makedirs(directory_path, exist_ok=True)
+    # # Get current date and time
+    # current_time = datetime.datetime.now()
+    # # Format the date and time into the desired filename format
+    # formatted_time = current_time.strftime("%m%d_%H%M%S-Sim")
+    # directory_path = os.path.join(save_dir, formatted_time)
+    # os.makedirs(directory_path, exist_ok=True)
 
-    np.save(os.path.join(directory_path, "state.npy"), state_log)
-    np.save(os.path.join(directory_path, "input.npy"), input_log)
-    np.save(os.path.join(directory_path, "error.npy"), error_log)
-    np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
+    # np.save(os.path.join(directory_path, "state.npy"), state_log)
+    # np.save(os.path.join(directory_path, "input.npy"), input_log)
+    # np.save(os.path.join(directory_path, "error.npy"), error_log)
+    # np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
 
-    print("#####################################################")
-    print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
-    print("#####################################################")
+    # print("#####################################################")
+    # print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
+    # print("#####################################################")
 

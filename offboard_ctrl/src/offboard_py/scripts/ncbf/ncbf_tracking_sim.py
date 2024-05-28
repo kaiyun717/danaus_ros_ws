@@ -77,6 +77,15 @@ class NCBFTrackingNode:
         self.env.dt = 1/rk4_hz
         self.ncbf_cont = NCBFControllerBodyRate(vehicle, self.env, self.ncbf_fn, param_dict, eps_bdry=eps_bdry, eps_outside=eps_outside)
 
+        ### Heating up ###
+        outside_x = np.zeros((16,1))
+        outside_x[0] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_x[1] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
+        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
+        _, _, _, _ = self.ncbf_cont.compute_control(outside_x, outside_u)
+        _, _, _, _ = self.ncbf_cont.compute_control(outside_x, outside_u)
+        _, _, _, _ = self.ncbf_cont.compute_control(outside_x, outside_u)
+
         ######################
         #####   PARAMS   #####
         ######################
@@ -475,55 +484,56 @@ if __name__ == "__main__":
         pend_upright_time=pend_upright_time, 
         pend_upright_tol=pend_upright_tol)
     
-    state_log, nom_input_log, safe_input_log, error_log, xgoal_log, status_log, phi_val_log = ncbf_node.run(duration=cont_duration)
+    state_log, nom_input_log, safe_input_log, status_log, phi_val_log = ncbf_node.run(duration=cont_duration)
     print("####################################################")
     print("## NCBF Tracking Node for Constant Position Over  ##")
     print("####################################################")
     print("")
 
-    #################################
-    ######### Save the logs #########
-    #################################
+    # #################################
+    # ######### Save the logs #########
+    # #################################
 
-    # curr_dir = os.getcwd()
-    save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/ncbf"
+    # # curr_dir = os.getcwd()
+    # save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/ncbf"
 
-    # Get current date and time
-    current_time = datetime.datetime.now()
-    # Format the date and time into the desired filename format
-    formatted_time = current_time.strftime("%m%d_%H%M%S-nCBF-sim")
-    directory_path = os.path.join(save_dir, formatted_time)
-    os.makedirs(directory_path, exist_ok=True)
+    # # Get current date and time
+    # current_time = datetime.datetime.now()
+    # # Format the date and time into the desired filename format
+    # formatted_time = current_time.strftime("%m%d_%H%M%S-nCBF-sim")
+    # directory_path = os.path.join(save_dir, formatted_time)
+    # os.makedirs(directory_path, exist_ok=True)
 
-    np.save(os.path.join(directory_path, "state.npy"), state_log)
-    np.save(os.path.join(directory_path, "nom_input.npy"), nom_input_log)
-    np.save(os.path.join(directory_path, "safe_input.npy"), safe_input_log)
-    np.save(os.path.join(directory_path, "error.npy"), error_log)
-    np.save(os.path.join(directory_path, "xgoal.npy"), xgoal_log)
-    np.save(os.path.join(directory_path, "status_log.npy"), status_log)
-    np.save(os.path.join(directory_path, "phi_val_log.npy"), phi_val_log)
-    np.save(os.path.join(directory_path, "params.npy"), 
-        {
-            "mode": mode,
-            "hz": hz,
-            "track_type": track_type,
-            "takeoff_height": takeoff_height,
-            "pend_upright_time": pend_upright_time,
-            "pend_upright_tol": pend_upright_tol,
-            "lqr_itr": lqr_itr,
-            "cont_duration": cont_duration,
-            "lqr_cont_type": lqr_cont_type,
-            "exp_name": exp_name,
-            "ckpt_num": ckpt_num,
-            "eps_bdry": eps_bdry,
-            "eps_outside": eps_outside,
-            "dynamics_noise_spread": dynamics_noise_spread,
-            "vehicle": vehicle,
-            "cont_type": cont_type,
-            "Q": Q,
-            "R": R
-        })
+    # np.save(os.path.join(directory_path, "state.npy"), state_log)
+    # np.save(os.path.join(directory_path, "nom_input.npy"), nom_input_log)
+    # np.save(os.path.join(directory_path, "safe_input.npy"), safe_input_log)
+    # np.save(os.path.join(directory_path, "error.npy"), error_log)
+    # np.save(os.path.join(directory_path, "xgoal.npy"), xgoal_log)
+    # np.save(os.path.join(directory_path, "status_log.npy"), status_log)
+    # np.save(os.path.join(directory_path, "phi_val_log.npy"), phi_val_log)
+    # np.save(os.path.join(directory_path, "params.npy"), 
+    #     {
+    #         "mode": mode,
+    #         "hz": hz,
+    #         "rk4_hz": rk4_hz,
+    #         "track_type": track_type,
+    #         "takeoff_height": takeoff_height,
+    #         "pend_upright_time": pend_upright_time,
+    #         "pend_upright_tol": pend_upright_tol,
+    #         "lqr_itr": lqr_itr,
+    #         "cont_duration": cont_duration,
+    #         "lqr_cont_type": lqr_cont_type,
+    #         "exp_name": exp_name,
+    #         "ckpt_num": ckpt_num,
+    #         "eps_bdry": eps_bdry,
+    #         "eps_outside": eps_outside,
+    #         "dynamics_noise_spread": dynamics_noise_spread,
+    #         "vehicle": vehicle,
+    #         "cont_type": cont_type,
+    #         "Q": Q,
+    #         "R": R
+    #     })
 
-    print("#####################################################")
-    print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
-    print("#####################################################")
+    # print("#####################################################")
+    # print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
+    # print("#####################################################")
