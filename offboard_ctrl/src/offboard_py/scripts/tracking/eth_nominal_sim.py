@@ -10,6 +10,7 @@ instead of using the r and s positions of the pendulum.
 import os
 import math
 import datetime
+import time
 
 import rospy
 import numpy as np
@@ -18,6 +19,7 @@ import scipy
 import argparse
 
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
+from std_msgs.msg import String
 
 from gazebo_msgs.srv import GetLinkProperties, SetLinkProperties, SetLinkState, SetLinkPropertiesRequest
 from gazebo_msgs.msg import LinkState
@@ -85,10 +87,13 @@ class ETHTrackingNode:
         self.quad_pose_pub = rospy.Publisher("mavros/setpoint_position/local", PoseStamped, queue_size=10)
         self.quad_att_setpoint_pub = rospy.Publisher("mavros/setpoint_raw/attitude", AttitudeTarget, queue_size=1)
 
+        # Time-checking
+        self.time_pub = rospy.Publisher("time_check", String, queue_size=10)
+
         self.hover_thrust = None
 
         ### Goal Position ###
-        takeoff_pose = np.array([1, 1, self.takeoff_height])
+        takeoff_pose = np.array([3, 3, self.takeoff_height])
 
         ### Takeoff Controller ###
                                 # γ, β, α, x, y, z, x_dot, y_dot, z_dot, pendulum (4)
@@ -214,6 +219,8 @@ class ETHTrackingNode:
         start_time = rospy.Time.now()
 
         while not rospy.is_shutdown():
+            # self._time_calls()
+
             # # Keep the quadrotor at this pose!
             # self.quad_pose_pub.publish(self.takeoff_pose)  
             self._quad_lqr_controller()     # This is better than takeoff_pose
@@ -258,13 +265,22 @@ class ETHTrackingNode:
                                         )
                     set_link_properties_service(new_pend_properties)
                     self._quad_lqr_controller() 
-                    # rospy.sleep(0.5)
                     return True
+                self.rate.sleep()
             else:
                 consecutive_time = rospy.Duration(0.0)
                 start_time = rospy.Time.now()
+                self.rate.sleep()
 
             self.rate.sleep()
+        
+    def _time_calls(self):
+        current_sim_time = rospy.get_time()
+        current_real_time = time.time()
+        time_msg = String()
+        time_msg.data = f"Sim Time: {current_sim_time}, Real Time: {current_real_time}"
+        self.time_pub.publish(time_msg)
+        rospy.loginfo(time_msg.data)
 
     def run(self, duration):
         # Log Array
@@ -293,6 +309,8 @@ class ETHTrackingNode:
         if self.mode == "sim":
             rospy.loginfo("Setting near origin & upright")
             for _ in range(500):
+                # self._time_calls()
+
                 link_state = LinkState()
                 # link_state.pose.position.x = -0.001995
                 # link_state.pose.position.y = 0.000135
@@ -305,6 +323,7 @@ class ETHTrackingNode:
                 
                 # self.quad_pose_pub.publish(self.takeoff_pose)
                 self._quad_lqr_controller()     # This is better than takeoff_pose
+                self.rate.sleep()
         else:
             pass
         
@@ -314,6 +333,8 @@ class ETHTrackingNode:
 
         # for itr in range(int(1e10)):  # If you want to test with console.
         for itr in range(num_itr):
+            # self._time_calls()
+
             if rospy.is_shutdown():
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
@@ -408,8 +429,11 @@ if __name__ == "__main__":
         R = 1.0 * np.diag([1, 7, 7, 7])
     elif cont_type == "tp":
                            # γ, β, α, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])
-        R = 1.0 * np.diag([1, 7, 7, 7])
+        # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])    # Stable controller
+        # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])      # Unstable as hell
+        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 8, 8, 8, 0.0, 0.0, 0.0, 1.0, 1.0, 0.4, 0.4])      
+        # R = 1.0 * np.diag([1, 7, 7, 7])
+        R = 1.0 * np.diag([1, 1, 1, 1])
 
     eth_node = ETHTrackingNode(vehicle, cont_type, mode, hz, track_type, Q, R, 
                                takeoff_height=takeoff_height, 

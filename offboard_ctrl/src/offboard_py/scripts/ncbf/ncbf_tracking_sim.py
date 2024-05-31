@@ -75,16 +75,95 @@ class NCBFTrackingNode:
         self.env = FlyingInvertedPendulumEnv(vehicle=vehicle, dt=1/hz, model_param_dict=param_dict, 
                                              dynamics_noise_spread=dynamics_noise_spread)
         self.env.dt = 1/rk4_hz
-        self.ncbf_cont = NCBFControllerBodyRate(vehicle, self.env, self.ncbf_fn, param_dict, eps_bdry=eps_bdry, eps_outside=eps_outside)
+        self.ncbf_cont = NCBFControllerBodyRate(vehicle, hz, self.env, self.ncbf_fn, param_dict, eps_bdry=eps_bdry, eps_outside=eps_outside)
 
         ### Heating up ###
-        outside_x = np.zeros((16,1))
-        outside_x[0] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
-        outside_x[1] = np.random.uniform(np.pi/4-0.1, np.pi/4+0.1)
-        outside_u = np.array([9.81, 0, 0, 0]).reshape((4,1))
-        _, _, _, _ = self.ncbf_cont.compute_control(outside_x, outside_u)
-        _, _, _, _ = self.ncbf_cont.compute_control(outside_x, outside_u)
-        _, _, _, _ = self.ncbf_cont.compute_control(outside_x, outside_u)
+        on_x = np.array([-0.46346474,  0.13877814,  0.05884146,  1.16704359, -2.59595345,  0.95250048,  0.16403026, -0.15441792,  1.55169064, -1.15060383,  2.61536136,  2.71176959,  1.66637469,  0.65454823,  1.07059167,  0.61955607]).reshape((16,1))
+        on_u = np.array([7.88015913, 13.83419441, -7.40703011,  0.]).reshape((4,1))
+        outside_x = on_x
+        outside_u = on_u
+
+        # outside_x = np.array([-0.01819673,  0.01379989, -0.00548955, -0.12428925,  0.1134088, -0.02664089, -0.12205355, -0.78982922,  0.10020495,  0.58738126, -0.00423115,  0.0018892,  1.24381425, -0.00605076,  0.01269216, -1.61940201]).reshape((16,1))
+        # outside_u = np.array([13.24967151,  0.07138291, -0.04163805,  0.        ]).reshape((4,1))
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+
+        outside_x = np.array([-4.20495321e-03,  1.37470886e-03, -2.01019711e-03, -9.91452674e-03,  1.57316304e-03, -1.93170973e-03, -8.88714373e-02, -6.15546992e-01, -3.59071235e-01, -1.65462501e+00, -4.16918259e-03,  6.27788911e-03,  1.38847901e+00,  1.22411661e-01, -1.45868003e-01, -3.11902091e-02]).reshape((16,1))
+        outside_u = np.array([10.05915285, -0.0708155,  -0.07689623,  0.        ]).reshape((4,1))
+
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+        u_safe, stat, phi, phi_next, slack = self.ncbf_cont.compute_control(outside_x, outside_u)
+        print(f"{outside_x.flatten()=}")
+        print(f"{outside_u.flatten()=}")
+        print(f"{u_safe=}")
+        print(f"{stat=}")
+        print(f"{phi=}")
+        print(f"{phi_next=}")
+        print(f"{slack=}")
+
+        IPython.embed()
+
 
         ######################
         #####   PARAMS   #####
@@ -145,7 +224,7 @@ class NCBFTrackingNode:
         #####     LQR    #####
         ######################
         ### Goal Position ###
-        takeoff_pose = np.array([0, 0, self.takeoff_height])
+        takeoff_pose = np.array([3, 3, self.takeoff_height])
 
         ### Takeoff Controller ###
                                 # γ, β, α, x, y, z, x_dot, y_dot, z_dot, pendulum (4)
@@ -216,6 +295,7 @@ class NCBFTrackingNode:
         self.att_setpoint.thrust = (u[0]/(9.81)) * self.hover_thrust
         self.att_setpoint.thrust = np.clip(self.att_setpoint.thrust, 0.0, 1.0)
         self.quad_att_setpoint_pub.publish(self.att_setpoint) 
+        print(f"U Sent: {u.flatten()}\n")
 
     def _get_states(self):
         quad_xyz = self.quad_cb.get_xyz_pose()
@@ -228,7 +308,7 @@ class NCBFTrackingNode:
         else:
             NotImplementedError(f"{self.cont_type} not implemented in NCBFTrackingNode")
 
-        x_safe = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, pend_pos.T, pend_vel.T, quad_xyz.T, quad_xyz_vel.T))
+        x_safe = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, np.flip(pend_pos).T, np.flip(pend_vel).T, quad_xyz.T, quad_xyz_vel.T)) # NSI expects (phi, theta), not (theta, phi).
         x_safe = x_safe.reshape((self.nx_cbf, 1))
 
         x_nom = np.concatenate((quad_xyz_ang.T, quad_xyz.T, quad_xyz_vel.T, pend_pos.T, pend_vel.T))
@@ -280,6 +360,25 @@ class NCBFTrackingNode:
 
         rospy.loginfo("Recorded hover thrust: {}".format(self.hover_thrust))
         rospy.loginfo("Takeoff pose achieved!")
+
+    def _pend_set_grav_0(self):
+        get_link_properties_service = rospy.ServiceProxy('/gazebo/get_link_properties', GetLinkProperties)
+        set_link_properties_service = rospy.ServiceProxy('/gazebo/set_link_properties', SetLinkProperties)
+
+        curr_pend_properties = get_link_properties_service(link_name=self.vehicle+'::pendulum')
+        new_pend_properties = SetLinkPropertiesRequest(
+                                            link_name=self.vehicle+'::pendulum',
+                                            gravity_mode=False,
+                                            com=curr_pend_properties.com,
+                                            mass=curr_pend_properties.mass,
+                                            ixx=curr_pend_properties.ixx,
+                                            ixy=curr_pend_properties.ixy,
+                                            ixz=curr_pend_properties.ixz,
+                                            iyy=curr_pend_properties.iyy,
+                                            iyz=curr_pend_properties.iyz,
+                                            izz=curr_pend_properties.izz
+                                        )
+        set_link_properties_service(new_pend_properties)
 
     def _pend_upright_sim(self, req_time=0.5, tol=0.05):
         get_link_properties_service = rospy.ServiceProxy('/gazebo/get_link_properties', GetLinkProperties)
@@ -334,11 +433,12 @@ class NCBFTrackingNode:
                                         )
                     set_link_properties_service(new_pend_properties)
                     self._quad_takeoff_controller() 
-                    # rospy.sleep(0.5)
                     return True
+                self.rate.sleep()
             else:
                 consecutive_time = rospy.Duration(0.0)
                 start_time = rospy.Time.now()
+                self.rate.sleep()
 
             self.rate.sleep()
             
@@ -352,6 +452,11 @@ class NCBFTrackingNode:
         # xgoal_log = np.zeros((self.nx_cbf, num_itr))    # 16
         status_log = np.zeros((1, num_itr))
         phi_val_log = np.zeros((1, num_itr))
+        next_phi_val_log = np.zeros((1, num_itr))
+        slack_log = np.zeros((1, num_itr))
+
+        ##### Reset Pendulum #####
+        self._pend_set_grav_0()
 
         ##### Takeoff Sequence #####
         self._takeoff_sequence()
@@ -366,7 +471,7 @@ class NCBFTrackingNode:
         ##### Setting near origin & upright #####
         if self.mode == "sim":
             rospy.loginfo("Setting near origin & upright")
-            for _ in range(150):
+            for _ in range(500):
                 link_state = LinkState()
                 # link_state.pose.position.x = -0.001995
                 # link_state.pose.position.y = 0.000135
@@ -377,8 +482,9 @@ class NCBFTrackingNode:
                 link_state.reference_frame = 'base_link'
                 _ = self.set_link_state_service(link_state)
                 
-                # self.quad_pose_pub.publish(self.takeoff_pose)
+                # se1.0f.quad_pose_pub.publish(self.takeoff_pose)
                 self._quad_takeoff_controller()     # This is better than takeoff_pose
+                self.rate.sleep()
         else:
             pass
 
@@ -394,10 +500,13 @@ class NCBFTrackingNode:
             
             x_safe, x_nom = self._get_states()
             u_bodyrate = self._quad_lqr_controller(x_nom)
-            u_safe_bodyrate, stat, phi_val, next_phi_val = self.ncbf_cont.compute_control(x_safe, np.copy(u_bodyrate))
-            rospy.loginfo(f"Itr.{itr}/{num_itr}\nU Safe: {u_safe_bodyrate.flatten()}\nU Nom: {u_bodyrate.flatten()}\nPhi: {phi_val}, Next Phi: {next_phi_val}, Status: {stat}\n")
+            u_safe_bodyrate, stat, phi_val, next_phi_val, slack = self.ncbf_cont.compute_control(x_safe, np.copy(u_bodyrate))
+            rospy.loginfo(f"Itr.{itr}/{num_itr}\nX: {x_safe.flatten()}\nPhi: {phi_val}, Next Phi: {next_phi_val}, Slack: {slack}\nU Nom: {u_bodyrate.flatten()}\nU Safe: {u_safe_bodyrate.flatten()}\n")
 
             self._send_attitude_setpoint(u_safe_bodyrate)
+
+            # if stat == 0 or stat == 1:
+            #     IPython.embed()
             
             # Log the state and input
             state_log[:, itr] = x_safe.flatten()
@@ -407,11 +516,13 @@ class NCBFTrackingNode:
             # xgoal_log[:, itr] = self.torque_LQR.xgoal.flatten()
             status_log[:, itr] = stat
             phi_val_log[:, itr] = phi_val
+            next_phi_val_log[:,itr] = next_phi_val
+            slack_log[:, itr] = slack
 
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, nom_input_log, safe_input_log, status_log, phi_val_log
+        return state_log, nom_input_log, safe_input_log, status_log, phi_val_log, next_phi_val_log, slack_log
         # return state_log, nom_input_log, safe_input_log, error_log, xgoal_log, status_log, phi_val_log
 
 
@@ -469,8 +580,11 @@ if __name__ == "__main__":
         R = 1.0 * np.diag([1, 7, 7, 7])
     elif cont_type == "tp":
                            # γ, β, α, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])
-        R = 1.0 * np.diag([1, 7, 7, 7])
+        # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])    # Stable controller
+        # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])      # Unstable as hell
+        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 8, 8, 8, 0.0, 0.0, 0.0, 1.0, 1.0, 0.4, 0.4])      
+        # R = 1.0 * np.diag([1, 7, 7, 7])
+        R = 1.0 * np.diag([1, 1, 1, 1])
         
     ncbf_node = NCBFTrackingNode(
         vehicle=vehicle, cont_type=cont_type,
@@ -484,56 +598,66 @@ if __name__ == "__main__":
         pend_upright_time=pend_upright_time, 
         pend_upright_tol=pend_upright_tol)
     
-    state_log, nom_input_log, safe_input_log, status_log, phi_val_log = ncbf_node.run(duration=cont_duration)
+    state_log, nom_input_log, safe_input_log, status_log, phi_val_log, next_phi_val_log, slack_log = ncbf_node.run(duration=cont_duration)
     print("####################################################")
     print("## NCBF Tracking Node for Constant Position Over  ##")
     print("####################################################")
     print("")
 
-    # #################################
-    # ######### Save the logs #########
-    # #################################
+    #################################
+    ######### Save the logs #########
+    #################################
 
-    # # curr_dir = os.getcwd()
-    # save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/ncbf"
+    # curr_dir = os.getcwd()
+    save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/ncbf"
 
-    # # Get current date and time
-    # current_time = datetime.datetime.now()
-    # # Format the date and time into the desired filename format
-    # formatted_time = current_time.strftime("%m%d_%H%M%S-nCBF-sim")
-    # directory_path = os.path.join(save_dir, formatted_time)
-    # os.makedirs(directory_path, exist_ok=True)
+    # Get current date and time
+    current_time = datetime.datetime.now()
+    # Format the date and time into the desired filename format
+    formatted_time = current_time.strftime("%m%d_%H%M%S-nCBF-sim")
+    directory_path = os.path.join(save_dir, formatted_time)
+    os.makedirs(directory_path, exist_ok=True)
 
     # np.save(os.path.join(directory_path, "state.npy"), state_log)
     # np.save(os.path.join(directory_path, "nom_input.npy"), nom_input_log)
     # np.save(os.path.join(directory_path, "safe_input.npy"), safe_input_log)
-    # np.save(os.path.join(directory_path, "error.npy"), error_log)
-    # np.save(os.path.join(directory_path, "xgoal.npy"), xgoal_log)
     # np.save(os.path.join(directory_path, "status_log.npy"), status_log)
     # np.save(os.path.join(directory_path, "phi_val_log.npy"), phi_val_log)
-    # np.save(os.path.join(directory_path, "params.npy"), 
-    #     {
-    #         "mode": mode,
-    #         "hz": hz,
-    #         "rk4_hz": rk4_hz,
-    #         "track_type": track_type,
-    #         "takeoff_height": takeoff_height,
-    #         "pend_upright_time": pend_upright_time,
-    #         "pend_upright_tol": pend_upright_tol,
-    #         "lqr_itr": lqr_itr,
-    #         "cont_duration": cont_duration,
-    #         "lqr_cont_type": lqr_cont_type,
-    #         "exp_name": exp_name,
-    #         "ckpt_num": ckpt_num,
-    #         "eps_bdry": eps_bdry,
-    #         "eps_outside": eps_outside,
-    #         "dynamics_noise_spread": dynamics_noise_spread,
-    #         "vehicle": vehicle,
-    #         "cont_type": cont_type,
-    #         "Q": Q,
-    #         "R": R
-    #     })
+    # np.save(os.path.join(directory_path, "next_phi_val_log.npy"), next_phi_val_log)
+    # np.save(os.path.join(directory_path, "slack_log.npy"), slack_log)
+    np.save(os.path.join(directory_path, "log.npy"), 
+        {
+            "state": state_log,
+            "nom_input": nom_input_log,
+            "safe_input": safe_input_log,
+            "status_log": status_log,
+            "phi_val_log": phi_val_log,
+            "next_phi_val_log": next_phi_val_log,
+            "slack_log": slack_log
+        })
+    np.save(os.path.join(directory_path, "params.npy"), 
+        {
+            "mode": mode,
+            "hz": hz,
+            "rk4_hz": rk4_hz,
+            "track_type": track_type,
+            "takeoff_height": takeoff_height,
+            "pend_upright_time": pend_upright_time,
+            "pend_upright_tol": pend_upright_tol,
+            "lqr_itr": lqr_itr,
+            "cont_duration": cont_duration,
+            "lqr_cont_type": lqr_cont_type,
+            "exp_name": exp_name,
+            "ckpt_num": ckpt_num,
+            "eps_bdry": eps_bdry,
+            "eps_outside": eps_outside,
+            "dynamics_noise_spread": dynamics_noise_spread,
+            "vehicle": vehicle,
+            "cont_type": cont_type,
+            "Q": Q,
+            "R": R
+        })
 
-    # print("#####################################################")
-    # print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
-    # print("#####################################################")
+    print("#####################################################")
+    print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
+    print("#####################################################")
