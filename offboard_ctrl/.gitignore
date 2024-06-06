@@ -2,3 +2,6 @@ build/*
 devel/*
 offboard_ctrl/src/trained_ncbf/*
 offboard_ctrl/src/offboard_py/logs/*
+offboard_ctrl/src/offboard_py/logs/
+danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/*
+danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/
