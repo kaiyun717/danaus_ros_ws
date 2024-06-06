@@ -93,6 +93,46 @@ def plot_states(state_log, params, save_path, drop_idx):
     plt.tight_layout()
     plt.savefig(save_path)
 
+# def plot_inputs(eth_input_log, bodyrate_input_log, torque_input_log, params, save_path, drop_idx):
+     
+#     eth_inputs = eth_input_log[:, :drop_idx]
+#     bodyrate_inputs = bodyrate_input_log[:, :drop_idx]
+#     torque_inputs = torque_input_log[:, :drop_idx]
+
+#     time = np.arange(eth_inputs.shape[1])
+#     time = time / params["hz"]
+
+#     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 10))
+    
+#     lines = []
+#     idx_labels = ["$a$", "$\omega_x$", "$\omega_y$", "$\omega_z$"]
+#     y_labels = ["Acceleration ($m/s^2$)", "Body Rates (rad/s)", "Body Rates (rad/s)", "Body Rates (rad/s)"]
+#     torque_labels = ["Acceleration ($m/s^2$)", "$\\tau_x$", "$\\tau_y$", "$\\tau_z$"]
+
+#     axes = [ax1, ax2, ax3, ax4]
+#     ### BODY RATES ###
+#     for i in range(4):
+#         line1, = axes[i].plot(time[:], eth_inputs[i, :], label="ETH: "+idx_labels[i])
+#         line2, = axes[i].plot(time[:], bodyrate_inputs[i, :], label="OUR B.R.: "+idx_labels[i])
+#         axes[i].set_xlabel("Time (sec)")
+#         axes[i].set_ylabel(y_labels[i])
+#         axes[i].set_title(idx_labels[i])
+
+#         ax_1 = axes[i].twinx()
+#         line3, = ax_1.plot(time[:], torque_inputs[i, :], label='Our T.: '+torque_labels[i], color="g", linestyle="--", alpha=0.5)
+#         ax_1.set_ylabel("Torque (N*m)")
+#         # ax_1.set_yticks([y_min, (y_max + y_min) / 2, y_max])
+#         # ax_1.set_yticklabels(['IN', 'ON', 'OUT'])
+
+#         lines.extend([line1, line2, line3])
+
+#     labels = [line.get_label() for line in lines]
+#     axes[0].legend(lines, labels, loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
+
+#     plt.suptitle("Inputs")
+#     plt.tight_layout(rect=[0, 0, 0.85, 1])  # Adjust the layout to accommodate the legend
+#     plt.savefig(save_path, bbox_inches='tight')
+
 def plot_inputs(eth_input_log, bodyrate_input_log, torque_input_log, params, save_path, drop_idx):
      
     eth_inputs = eth_input_log[:, :drop_idx]
@@ -104,35 +144,33 @@ def plot_inputs(eth_input_log, bodyrate_input_log, torque_input_log, params, sav
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(16, 10))
     
-    lines = []
     idx_labels = ["$a$", "$\omega_x$", "$\omega_y$", "$\omega_z$"]
+    torque_labels = ["a", "$\\tau_x$", "$\\tau_y$", "$\\tau_z$"]
+    
     y_labels = ["Acceleration ($m/s^2$)", "Body Rates (rad/s)", "Body Rates (rad/s)", "Body Rates (rad/s)"]
-    torque_labels = ["Acceleration ($m/s^2$)", "$\\tau_x$", "$\\tau_y$", "$\\tau_z$"]
 
     axes = [ax1, ax2, ax3, ax4]
-    ### BODY RATES ###
+    font_size = 14
+
     for i in range(4):
         line1, = axes[i].plot(time[:], eth_inputs[i, :], label="ETH: "+idx_labels[i])
-        line2, = axes[i].plot(time[:], bodyrate_inputs[i, :], label="OUR B.R.: "+idx_labels[i])
-        axes[i].set_xlabel("Time (sec)")
-        axes[i].set_ylabel(y_labels[i])
-        axes[i].set_title(idx_labels[i])
+        line2, = axes[i].plot(time[:], bodyrate_inputs[i, :], label="OUR: "+idx_labels[i])
+        axes[i].set_xlabel("Time (sec)", fontsize=font_size)
+        axes[i].set_ylabel(y_labels[i], fontsize=font_size)
+        axes[i].set_title(idx_labels[i], fontsize=font_size)
 
         ax_1 = axes[i].twinx()
-        line3, = ax_1.plot(time[:], torque_inputs[i, :], label='Our T.: '+torque_labels[i], color="g", linestyle="--", alpha=0.5)
-        ax_1.set_ylabel("Torque (N*m)")
-        # ax_1.set_yticks([y_min, (y_max + y_min) / 2, y_max])
-        # ax_1.set_yticklabels(['IN', 'ON', 'OUT'])
+        line3, = ax_1.plot(time[:], torque_inputs[i, :], label='Our: '+torque_labels[i], color="g", linestyle="--", alpha=0.5)
+        ax_1.set_ylabel("Torque (N*m)", fontsize=font_size)
+        
+        # Combine legends
+        lines = [line1, line2, line3]
+        labels = [line.get_label() for line in lines]
+        axes[i].legend(lines, labels, loc='upper left', fontsize=font_size)
 
-        lines.extend([line1, line2, line3])
-
-    labels = [line.get_label() for line in lines]
-    axes[0].legend(lines, labels, loc='upper left', bbox_to_anchor=(1.05, 1), borderaxespad=0.)
-
-    plt.suptitle("Inputs")
-    plt.tight_layout(rect=[0, 0, 0.85, 1])  # Adjust the layout to accommodate the legend
+    plt.suptitle("Inputs", fontsize=font_size + 4)
+    plt.tight_layout(rect=[0, 0, 1, 0.96])  # Adjust the layout to accommodate the legends
     plt.savefig(save_path, bbox_inches='tight')
-    
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process data files.')

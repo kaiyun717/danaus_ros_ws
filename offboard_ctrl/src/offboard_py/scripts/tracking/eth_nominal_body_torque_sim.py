@@ -40,6 +40,7 @@ class ETHTrackingTorqueNode:
     def __init__(self, 
                  vehicle,
                  cont_type,
+                 ang_vel_type,
                  mode,
                  hz, 
                  track_type,
@@ -68,6 +69,7 @@ class ETHTrackingTorqueNode:
             self.mass = 0.70034104 + 0.046 #0.03133884
         
         self.cont_type = cont_type              # "rs" or "tp"
+        self.ang_vel_type = ang_vel_type        # "euler" or "body"
 
         self.mode = mode                        # "sim" or "real"
         self.hz = hz                            # Control Loop Frequency
@@ -116,12 +118,12 @@ class ETHTrackingTorqueNode:
         ### Tracking Controller ###
         if self.track_type == "constant":
             ### Actual controller ###
-            self.cont = ConstantPositionTorqueTracker(cont_type, self.J, self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
+            self.cont = ConstantPositionTorqueTracker(cont_type, ang_vel_type, self.J, self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
             self.cont_K_inf = self.cont.infinite_horizon_LQR(self.lqr_itr)
             self.xgoal = self.cont.xgoal
             self.ugoal = self.cont.ugoal
             ### ETH controller for comparison ###
-                                # γ, β, α, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
+                                # γ, β, α, wx, wy, wz, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
             Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])
             R = 1.0 * np.diag([1, 7, 7, 7])
             self.eth_cont = ConstantPositionTracker(cont_type, self.L, Q, R, np.array([0, 0, self.takeoff_height]), self.dt)
@@ -167,6 +169,8 @@ class ETHTrackingTorqueNode:
         return u_takeoff
 
     def _send_attitude_setpoint(self, u):
+        self.prev_bodyrate = u[1:]
+
         self.att_setpoint.header.stamp = rospy.Time.now()
         self.att_setpoint.body_rate.x = u[1]
         self.att_setpoint.body_rate.y = u[2]
@@ -184,22 +188,36 @@ class ETHTrackingTorqueNode:
         u_eth = self.eth_ugoal - self.eth_K_inf @ (x_eth - self.eth_xgoal)
         return u_eth
     
-    def _torque_to_bodyrate(self, u_torque, omega):
-        ### Make bodyrate vector ###
-        u_bodyrate = np.zeros((4,1))
-        u_bodyrate[0] = u_torque[0]
+    def _bodyrate_dynamics(self, u_torque, omega):
         ### Convert torque to bodyrate ###
+        # IPython.embed()
         omega_hat = np.array([[0, -omega[2], omega[1]],
                               [omega[2], 0, -omega[0]],
                               [-omega[1], omega[0], 0]])
         omega = omega.reshape((3,1))
         # IPython.embed()
         omega_dot = self.J_inv @ (u_torque[1:] - omega_hat @ (self.J @ omega))
+        return omega_dot.squeeze()  # convert to (3,1) shape
+ 
+    def _rk4(self, u_torque, omega):
+        k1 = self.dt * self._bodyrate_dynamics(u_torque, omega)
+        k2 = self.dt * self._bodyrate_dynamics(u_torque, omega + 0.5*k1)
+        k3 = self.dt * self._bodyrate_dynamics(u_torque, omega + 0.5*k2)
+        k4 = self.dt * self._bodyrate_dynamics(u_torque, omega + k3)
+        omega_next = omega + (k1 + 2*k2 + 2*k3 + k4) / 6
+        return omega_next
+
+    def _torque_to_bodyrate(self, u_torque, omega):
+        bodyrate = self._rk4(u_torque, omega)
+        # bodyrate = self._rk4(u_torque, self.prev_bodyrate.squeeze())
+        u_bodyrate = np.array([u_torque[0].item(), bodyrate[0], bodyrate[1], 0])
+        return u_bodyrate
         
+        # omega_dot = self._bodyrate_dynamics(u_torque, omega)
         ### Option 1 ###
         # u_bodyrate[1:] = self.prev_bodyrate + self.dt * omega_dot
         ### Option 2 ###
-        u_bodyrate[1:] = self.dt * omega_dot
+        # u_bodyrate[1:] = self.dt * omega_dot
         ### Option 3 ###
         # u_bodyrate = self.prev_bodyrate + self.dt * omega_dot
 
@@ -207,7 +225,7 @@ class ETHTrackingTorqueNode:
         # self.accum_bodyrate = self.accum_bodyrate * 0.9 + u_bodyrate[1:] * 0.1
         # u_bodyrate = np.array([u_bodyrate[0], self.accum_bodyrate[0], self.accum_bodyrate[1], self.accum_bodyrate[2]])
 
-        return u_bodyrate
+        # return u_bodyrate
     
     def _get_states(self):
         quad_xyz = self.quad_cb.get_xyz_pose()
@@ -223,7 +241,7 @@ class ETHTrackingTorqueNode:
             NotImplementedError(f"{self.cont_type} not implemented in NCBFTrackingNode")
 
         # γ, β, α, γ_dot, β_dot, α_dot, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-        x_16 = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, quad_xyz.T, quad_xyz_vel.T, pend_pos.T, pend_vel.T)) # Torque LQR expects (theta, phi).
+        x_16 = np.concatenate((quad_xyz_ang.T, omega.T, quad_xyz.T, quad_xyz_vel.T, pend_pos.T, pend_vel.T)) # Torque LQR expects (theta, phi).
         x_16 = x_16.reshape((self.nx, 1))
 
         return x_16, omega
@@ -301,7 +319,7 @@ class ETHTrackingTorqueNode:
             link_state.reference_frame = 'base_link'
             _ = self.set_link_state_service(link_state)
 
-            # Get the position of the pendulum
+            # Get the position of the pendulumu_bodyrate
             quad_xyz = self.quad_cb.get_xyz_pose()
             pendulum_position = self.pend_cb.get_rs_pose(vehicle_pose=quad_xyz)
 
@@ -471,6 +489,7 @@ if __name__ == "__main__":
     parser.add_argument("--cont_duration", type=int, default=20, help="Duration for which the controller should run (in seconds)")
     parser.add_argument("--vehicle", type=str)
     parser.add_argument("--cont_type", type=str, help="Either rs or tp")    # rs: r and s, tp: theta and phi
+    parser.add_argument("--ang_vel_type", type=str, default="body", help="Type of angular velocity to be used (euler or body)")
     parser.add_argument("--save", type=bool, default=True, help="Save the logs")
 
     args = parser.parse_args()
@@ -484,7 +503,9 @@ if __name__ == "__main__":
     cont_duration = args.cont_duration
     vehicle = args.vehicle
     cont_type = args.cont_type
+    ang_vel_type = args.ang_vel_type
     save = args.save
+    
 
     print("#####################################################")
     print("## ETH Tracking Node for Constant Position Started ##")
@@ -500,14 +521,14 @@ if __name__ == "__main__":
         Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 2, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])
         R = 1.0 * np.diag([1, 7, 7, 7])
     elif cont_type == "tp":
-                        # γ, β, α, γ_dot, β_dot, α_dot, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
+                        # γ, β, α, γ_dot (wx), β_dot (wy), α_dot (wz), x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
         Q = 1.0 * np.diag([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])    # Stable controller
         # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])      # Unstable as hell
         # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 8, 8, 8, 0.0, 0.0, 0.0, 1.0, 1.0, 0.4, 0.4])      
         R = 1.0 * np.diag([1, 7, 7, 7])     # Stable controller
         # R = 1.0 * np.diag([1, 1, 1, 1])
 
-    eth_node = ETHTrackingTorqueNode(vehicle, cont_type, mode, hz, track_type, Q, R, 
+    eth_node = ETHTrackingTorqueNode(vehicle, cont_type, ang_vel_type, mode, hz, track_type, Q, R, 
                                takeoff_height=takeoff_height, 
                                lqr_itr=lqr_itr, 
                                pend_upright_time=pend_upright_time, 
@@ -530,7 +551,7 @@ if __name__ == "__main__":
         # Get current date and time
         current_time = datetime.datetime.now()
         # Format the date and time into the desired filename format
-        formatted_time = current_time.strftime("%m%d_%H%M%S-Torque-Sim")
+        formatted_time = current_time.strftime("%m%d_%H%M%S-Torque_Body-Sim")
         directory_path = os.path.join(save_dir, formatted_time)
         os.makedirs(directory_path, exist_ok=True)
 
@@ -554,6 +575,7 @@ if __name__ == "__main__":
                 "cont_duration": cont_duration,
                 "vehicle": vehicle,
                 "cont_type": cont_type,
+                "ang_vel_type": ang_vel_type,
                 "Q": Q,
                 "R": R
             })
