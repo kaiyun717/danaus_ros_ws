@@ -467,7 +467,7 @@ if __name__ == "__main__":
     # np.save(os.path.join(directory_path, "error.npy"), error_log)
     # np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
 
-    # print("#####################################################")
+    # print("#############################################0, 0, 0, 0, 0, 3, 0, 0, 0########")
     # print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
     # print("#####################################################")
 
