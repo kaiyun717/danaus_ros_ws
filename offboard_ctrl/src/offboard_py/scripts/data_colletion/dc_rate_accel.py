@@ -143,14 +143,14 @@ class DataCollectionRateAccel:
         quad_xyz = self.quad_cb.get_xyz_pose()
         quad_xyz_vel = self.quad_cb.get_xyz_velocity()
         quad_xyz_ang = self.quad_cb.get_xyz_angles()
-        omega = self.quad_cb.get_xyz_angular_velocity_body()
+        omega, omega_timestamp = self.quad_cb.get_xyz_angular_velocity_body_timestamped()
         accel = np.array([0, 0, 0])
 
         # γ, β, α, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
         x_cont = np.concatenate((quad_xyz_ang.T, quad_xyz.T, quad_xyz_vel.T)) # Torque LQR expects (theta, phi).
         x_cont = x_cont.reshape((self.nx, 1))
 
-        return x_cont, omega.reshape((3, 1)), accel.reshape((3, 1))
+        return x_cont, omega.reshape((3, 1)), accel.reshape((3, 1)), omega_timestamp
 
     def _takeoff_sequence(self):
         # Send initial commands
@@ -200,15 +200,16 @@ class DataCollectionRateAccel:
 
     def _change_goal(self):
         if self.track_type == "xyz":
-            random_x = np.random.uniform(-10, 10, 1)
-            random_y = np.random.uniform(-10, 10, 1)
+            random_x = np.random.uniform(-5, 5, 1)
+            random_y = np.random.uniform(-5, 5, 1)
             random_z = np.random.uniform(3, 10, 1)
             self.xgoal = np.array([0, 0, 0, random_x.item(), random_y.item(), random_z.item(), 0, 0, 0]).reshape((self.nx, 1))
         elif self.track_type == "orient":
-            random_gamma = np.random.uniform(-np.pi/4, np.pi/4, 1)
-            random_beta = np.random.uniform(-np.pi/4, np.pi/4, 1)
-            random_alpha = np.random.uniform(-np.pi/4, np.pi/4, 1)
-            self.xgoal = np.array([random_gamma.item(), random_beta.item(), random_alpha.item(), 0, 0, 0, 0, 0, 0]).reshape((self.nx, 1))
+            random_gamma = np.random.uniform(-np.pi/3, np.pi/3, 1)
+            random_beta = np.random.uniform(-np.pi/3, np.pi/3, 1)
+            random_alpha = np.random.uniform(-np.pi/3, np.pi/3, 1)
+            random_z = np.random.uniform(3, 10, 1)
+            self.xgoal = np.array([random_gamma.item(), random_beta.item(), random_alpha.item(), 0, 0, random_z.item(), 0, 0, 0]).reshape((self.nx, 1))
 
     def run(self, duration):
         # Log Array
@@ -218,6 +219,7 @@ class DataCollectionRateAccel:
         error_log = np.zeros((self.nx, num_itr))
         omega_log = np.zeros((3, num_itr))  # Omega: rotational velocity
         accel_log = np.zeros((3, num_itr))  # Omega dot: rotational acceleration
+        omega_timestamp_log = np.zeros((1, num_itr))
 
         ##### Takeoff Sequence #####
         self._takeoff_sequence()
@@ -237,7 +239,7 @@ class DataCollectionRateAccel:
                 self._change_goal()
 
             ### Get the states ###
-            x, omega, accel = self._get_states()
+            x, omega, accel, omega_timestamp = self._get_states()
             ### Get the control input ###
             u = self.controller(x)
             ### Send the control input ###
@@ -249,14 +251,18 @@ class DataCollectionRateAccel:
             error_log[:, itr] = (x - self.xgoal).flatten()
             omega_log[:, itr] = omega.flatten()
             accel_log[:, itr] = accel.flatten()
+            omega_timestamp_log[:, itr] = omega_timestamp
 
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, input_log, error_log, omega_log, accel_log
+        return state_log, input_log, error_log, omega_log, accel_log, omega_timestamp_log
 
 
 if __name__ == "__main__":
+
+    # Get current date and time
+    current_time = datetime.datetime.now()
     
     ##### Argparse #####
     parser = argparse.ArgumentParser(description="ETH Tracking Node for Constant Position")
@@ -292,33 +298,48 @@ if __name__ == "__main__":
         hz, track_type, Q, R, 
         takeoff_height=takeoff_height)
     
-    state_log, input_log, error_log, omega_log, accel_log = eth_node.run(duration=cont_duration)
+    state_log, input_log, error_log, omega_log, accel_log, omega_timestamp_log = eth_node.run(duration=cont_duration)
 
     print("#####################################################")
     print("### Data Collection Node for Rate-Accel. Started ####")
     print("#####################################################")
     print("")
 
-    # #################################
-    # ######### Save the logs #########
-    # #################################
+    #################################
+    ######### Save the logs #########
+    #################################
 
-    # # curr_dir = os.getcwd()
-    # save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs"
+    # curr_dir = os.getcwd()
+    save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/data_collection"
 
-    # # Get current date and time
-    # current_time = datetime.datetime.now()
-    # # Format the date and time into the desired filename format
-    # formatted_time = current_time.strftime("%m%d_%H%M%S-Sim")
-    # directory_path = os.path.join(save_dir, formatted_time)
-    # os.makedirs(directory_path, exist_ok=True)
+    # Format the date and time into the desired filename format
+    formatted_time = current_time.strftime("%m%d_%H%M%S-DC-Sim")
+    directory_path = os.path.join(save_dir, formatted_time)
+    os.makedirs(directory_path, exist_ok=True)
 
-    # np.save(os.path.join(directory_path, "state.npy"), state_log)
-    # np.save(os.path.join(directory_path, "input.npy"), input_log)
-    # np.save(os.path.join(directory_path, "error.npy"), error_log)
-    # np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
-
-    # print("#############################################0, 0, 0, 0, 0, 3, 0, 0, 0########")
-    # print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
-    # print("#####################################################")
+    np.save(os.path.join(directory_path, "log.npy"),
+            {
+                "state": state_log,
+                "input": input_log,
+                "error": error_log,
+                "omega": omega_log,
+                "accel": accel_log,
+                "omega_timestamp": omega_timestamp_log
+            })
+    np.save(os.path.join(directory_path, "params.npy"),
+            {
+                "vehicle": vehicle,
+                "cont_type": cont_type,
+                "mode": mode,
+                "hz": hz,
+                "track_type": track_type,
+                "Q": Q,
+                "R": R,
+                "takeoff_height": takeoff_height,
+                "cont_duration": cont_duration
+            })
+    
+    print("#####################################################")
+    print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
+    print("#####################################################")
 

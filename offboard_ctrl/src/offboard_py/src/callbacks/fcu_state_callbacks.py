@@ -106,6 +106,11 @@ class VehicleStateCB:
     def get_xyz_angular_velocity_body(self):
         # Yaw, Pitch, Roll 
         return np.array([self.velocity_body.twist.angular.x, self.velocity_body.twist.angular.y, self.velocity_body.twist.angular.z])
+    
+    def get_xyz_angular_velocity_body_timestamped(self):
+        angular_velocity = np.array([self.velocity_body.twist.angular.x, self.velocity_body.twist.angular.y, self.velocity_body.twist.angular.z])
+        timestamp = self.velocity_body.header.stamp.to_sec()    # float
+        return angular_velocity, timestamp
         
 if __name__ == "__main__":
     rospy.init_node('vehicle_state_cb', anonymous=True)
@@ -114,6 +119,7 @@ if __name__ == "__main__":
     rate = rospy.Rate(2)
 
     while not rospy.is_shutdown():
-        print("XYZ Pose: ", state_cb.get_xyz_pose())
+        # print("XYZ Pose: ", state_cb.get_xyz_pose())
         # print("Yaw, Pitch, Roll: ", state_cb.get_zyx_angles()*180/np.pi)
+        print(state_cb.get_xyz_angular_velocity_body_timestamped())
         
