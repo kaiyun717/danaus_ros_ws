@@ -70,6 +70,8 @@ class DataCollectionRateAccel:
         self.nx = 9
         self.nu = 4
 
+        self.min_height = 2.0
+
         ### Subscribers ###
         self.quad_cb = VehicleStateCB(mode=self.mode)
         ### Services ###
@@ -202,13 +204,13 @@ class DataCollectionRateAccel:
         if self.track_type == "xyz":
             random_x = np.random.uniform(-5, 5, 1)
             random_y = np.random.uniform(-5, 5, 1)
-            random_z = np.random.uniform(3, 10, 1)
+            random_z = np.random.uniform(self.min_height+1, 10, 1)
             self.xgoal = np.array([0, 0, 0, random_x.item(), random_y.item(), random_z.item(), 0, 0, 0]).reshape((self.nx, 1))
         elif self.track_type == "orient":
             random_gamma = np.random.uniform(-np.pi/3, np.pi/3, 1)
             random_beta = np.random.uniform(-np.pi/3, np.pi/3, 1)
             random_alpha = np.random.uniform(-np.pi/3, np.pi/3, 1)
-            random_z = np.random.uniform(3, 10, 1)
+            random_z = np.random.uniform(self.min_height+1, 10, 1)
             self.xgoal = np.array([random_gamma.item(), random_beta.item(), random_alpha.item(), 0, 0, random_z.item(), 0, 0, 0]).reshape((self.nx, 1))
 
     def run(self, duration):
@@ -253,10 +255,14 @@ class DataCollectionRateAccel:
             accel_log[:, itr] = accel.flatten()
             omega_timestamp_log[:, itr] = omega_timestamp
 
+            if x[5] < self.min_height:
+                rospy.loginfo("Minimum height reached. Exiting the control loop.")
+                break
+            
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, input_log, error_log, omega_log, accel_log, omega_timestamp_log
+        return state_log[:, :itr], input_log[:, :itr], error_log[:, :itr], omega_log[:, :itr], accel_log[:, :itr], omega_timestamp_log[:, :itr]
 
 
 if __name__ == "__main__":
