@@ -68,7 +68,8 @@ def compile_all_data(logs_dir, drop_idx_from_end):
     """
     Compiling all the data from dc_log_folders.
     """
-    dc_log_folders = find_all_folders(logs_dir)
+    # dc_log_folders = find_all_folders(logs_dir)
+    dc_log_folders = ["/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/data_collection/0610_133851-DC-Sim-Good"]
 
     omega_meas_logs = []
     omega_des_logs = []
