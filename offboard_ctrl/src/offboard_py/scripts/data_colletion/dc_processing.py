@@ -36,54 +36,56 @@ def load_data(folder_path, drop_idx_from_end=None):
     
     return state_log, input_log, error_log, omega_log, omega_timestamp_log, params
 
-def load_datas(folder_paths, drop_idx_from_end=None):
-    state_logs = []
-    input_logs = []
-    error_logs = []
-    omega_logs = []
-    omega_timestamp_logs = []
-    params = []
-    for folder_path in folder_paths:
-        state_log, input_log, error_log, omega_log, omega_timestamp_log, param = load_data(folder_path)
-
-        if drop_idx_from_end is not None:
-            state_log = state_log[:, :-drop_idx_from_end]
-            input_log = input_log[:, :-drop_idx_from_end]
-            error_log = error_log[:, :-drop_idx_from_end]
-            omega_log = omega_log[:, :-drop_idx_from_end]
-            omega_timestamp_log = omega_timestamp_log[:, :-drop_idx_from_end]
-        
-        state_logs.append(state_log.T)
-        input_logs.append(input_log.T)
-        error_logs.append(error_log.T)
-        omega_logs.append(omega_log.T)
-        omega_timestamp_logs.append(omega_timestamp_log.T)
-
-    state_logs = np.concatenate(state_logs, axis=0)
-    input_logs = np.concatenate(input_logs, axis=0)
-    error_logs = np.concatenate(error_logs, axis=0)
-    omega_logs = np.concatenate(omega_logs, axis=0)
-    omega_timestamp_logs = np.concatenate(omega_timestamp_logs, axis=0)
-
-    return state_logs, input_logs, error_logs, omega_logs, omega_timestamp_logs, params
-
-def get_ang_values(state_log, input_log, omega_log, omega_timestamp_log):
+def get_ang_values(input_log, omega_log, omega_timestamp_log):
     """
     Preprocess the data for angular values.
     """
+    ### Omega measurements ###
     omega_meas = omega_log       # gamma, beta, alpha
-    omega_des = input_log[:,1:]  # wx, wy, wz
+    ### Omega inputs ###
+    omega_des = input_log[1:,:]  # wx, wy, wz
     
-    omega_delta = omega_meas[1:,:] - omega_meas[:-1,:]
-    delta_time = omega_timestamp_log[1:] - omega_timestamp_log[:-1]
+    ### Change in omega ###
+    omega_delta = omega_meas[:,1:] - omega_meas[:,:-1]
+    delta_time = omega_timestamp_log[:,1:] - omega_timestamp_log[:,:-1]
+    ### Find the nonzero-time indices ###
+    nonzero_idx = np.nonzero(delta_time.squeeze())  # This is from the 0 index of `delta_time`, which corresponds to the 0 index of other arrays.
+    
+    ### Remove the zero-time indices ###
+    omega_meas = omega_meas[:,nonzero_idx].squeeze()
+    omega_des = omega_des[:,nonzero_idx].squeeze()
+    omega_delta = omega_delta[:,nonzero_idx].squeeze()
+    delta_time = delta_time[:,nonzero_idx].squeeze()
+
     omega_dot = omega_delta / delta_time
 
-    assert (omega_des[:-1,:].shape == omega_dot.shape)
-    assert (omega_meas[:-1,:].shape == omega_dot.shape)
+    assert (omega_des.shape == omega_dot.shape)
+    assert (omega_meas.shape == omega_dot.shape)
 
-    return omega_meas[:-1,:], omega_des[:-1,:], omega_dot
+    return omega_meas, omega_des, omega_dot
 
+def compile_all_data(logs_dir, drop_idx_from_end):
+    """
+    Compiling all the data from dc_log_folders.
+    """
+    dc_log_folders = find_all_folders(logs_dir)
 
+    omega_meas_logs = []
+    omega_des_logs = []
+    omega_dot_logs = []
+
+    for folder_path in dc_log_folders:
+        state_log, input_log, error_log, omega_log, omega_timestamp_log, params = load_data(folder_path, drop_idx_from_end)
+        omega_meas, omega_des, omega_dot = get_ang_values(input_log, omega_log, omega_timestamp_log)
+        omega_meas_logs.append(omega_meas.T)
+        omega_des_logs.append(omega_des.T)
+        omega_dot_logs.append(omega_dot.T)
+
+    omega_meas_logs = np.concatenate(omega_meas_logs, axis=0)
+    omega_des_logs = np.concatenate(omega_des_logs, axis=0)
+    omega_dot_logs = np.concatenate(omega_dot_logs, axis=0)
+
+    return omega_meas_logs, omega_des_logs, omega_dot_logs
 
 
 if __name__ == "__main__":
@@ -96,6 +98,6 @@ if __name__ == "__main__":
     logs_dir = args.logs_dir
     drop_idx_from_end = args.drop_idx_from_end
 
-    dc_log_folders = find_all_folders(logs_dir)
-    state_logs, input_logs, error_logs, omega_logs, omega_timestamp_logs, params = load_datas(dc_log_folders, drop_idx_from_end)
+    omega_meas_logs, omega_des_logs, omega_dot_logs = compile_all_data(logs_dir, drop_idx_from_end)
+
     IPython.embed()

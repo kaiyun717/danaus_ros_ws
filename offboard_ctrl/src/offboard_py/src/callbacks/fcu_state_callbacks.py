@@ -109,6 +109,7 @@ class VehicleStateCB:
     
     def get_xyz_angular_velocity_body_timestamped(self):
         angular_velocity = np.array([self.velocity_body.twist.angular.x, self.velocity_body.twist.angular.y, self.velocity_body.twist.angular.z])
+        # print(f"HeadStamp={self.velocity_body.header.stamp}")
         timestamp = self.velocity_body.header.stamp.to_sec()    # float
         return angular_velocity, timestamp
         
