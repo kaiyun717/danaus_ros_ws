@@ -237,7 +237,7 @@ class DataCollectionRateAccel:
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
             
-            if (itr % 250 == 0):
+            if (itr % 200 == 0):
                 self._change_goal()
 
             ### Get the states ###
