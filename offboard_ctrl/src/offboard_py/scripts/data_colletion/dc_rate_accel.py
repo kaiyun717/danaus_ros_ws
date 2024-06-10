@@ -136,6 +136,15 @@ class DataCollectionRateAccel:
 
     def _quad_lqr_control(self, x_quad):
         u = self.ugoal - self.cont_K_inf @ (x_quad - self.xgoal)
+        
+        # u[1] += np.random.uniform(-1, 1)
+        # u[2] += np.random.uniform(-1, 1)
+        # u[3] += np.random.uniform(-1, 1)
+        
+        # u[1] += np.random.normal(loc=0, scale=0.1, size=1).item()
+        # u[2] += np.random.normal(loc=0, scale=0.1, size=1).item()
+        # u[3] += np.random.normal(loc=0, scale=0.1, size=1).item()
+        
         return u
 
     def _quad_rand_control(self, x_quad):
@@ -237,7 +246,7 @@ class DataCollectionRateAccel:
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
             
-            if (itr % 200 == 0):
+            if (itr % 150 == 0):
                 self._change_goal()
 
             ### Get the states ###
