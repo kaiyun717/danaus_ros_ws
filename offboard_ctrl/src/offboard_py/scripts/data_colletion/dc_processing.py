@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression
 
 def find_all_folders(logs_dir):
     folders = os.listdir(logs_dir)
-    folders = [folder for folder in folders if os.path.isdir(os.path.join(logs_dir, folder))]
+    folders = [folder for folder in folders if os.path.isdir(os.path.join(logs_dir, folder)) and "Good" in folder]
     folders.sort()
     folders = [os.path.join(logs_dir, folder) for folder in folders]
     return folders
@@ -27,11 +27,11 @@ def load_data(folder_path, drop_idx_from_end=None):
     omega_timestamp_log = log['omega_timestamp']
     
     if drop_idx_from_end is not None:
-        state_log = state_log[:, 50_000:-drop_idx_from_end]
-        input_log = input_log[:, 50_000:-drop_idx_from_end]
-        error_log = error_log[:, 50_000:-drop_idx_from_end]
-        omega_log = omega_log[:, 50_000:-drop_idx_from_end]
-        omega_timestamp_log = omega_timestamp_log[:, 50_000:-drop_idx_from_end]
+        state_log = state_log[:, drop_idx_from_end:-drop_idx_from_end]
+        input_log = input_log[:, drop_idx_from_end:-drop_idx_from_end]
+        error_log = error_log[:, drop_idx_from_end:-drop_idx_from_end]
+        omega_log = omega_log[:, drop_idx_from_end:-drop_idx_from_end]
+        omega_timestamp_log = omega_timestamp_log[:, drop_idx_from_end:-drop_idx_from_end]
         
     params = np.load(os.path.join(folder_path, 'params.npy'), allow_pickle=True).item()
     
@@ -40,8 +40,6 @@ def load_data(folder_path, drop_idx_from_end=None):
 def get_ang_values(input_log, omega_log, omega_timestamp_log):
     """
     Preprocess the data for angular values.
-
-
     """
     ### Omega measurements ###
     omega_meas = omega_log       # gamma, beta, alpha
@@ -56,6 +54,7 @@ def get_ang_values(input_log, omega_log, omega_timestamp_log):
     omega_delta = omega_delta[:,nonzero_idx[0]].squeeze()
     delta_time = delta_time[:,nonzero_idx[0]].squeeze()
     omega_dot = omega_delta / delta_time
+    # omega_dot = omega_delta / 0.01
 
     ### Remove the zero-time indices ###
     omega_meas = omega_meas[:,nonzero_idx[0]].squeeze()
@@ -70,8 +69,8 @@ def compile_all_data(logs_dir, drop_idx_from_end):
     """
     Compiling all the data from dc_log_folders.
     """
-    # dc_log_folders = find_all_folders(logs_dir)
-    dc_log_folders = ["/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/data_collection/0610_133851-DC-Sim-Good"]
+    dc_log_folders = find_all_folders(logs_dir)
+    # dc_log_folders = ["/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/data_collection/0610_173119-DC-Sim-Good"]
 
     omega_meas_logs = []
     omega_des_logs = []
@@ -87,6 +86,19 @@ def compile_all_data(logs_dir, drop_idx_from_end):
     omega_meas_logs = np.concatenate(omega_meas_logs, axis=0)
     omega_des_logs = np.concatenate(omega_des_logs, axis=0)
     omega_dot_logs = np.concatenate(omega_dot_logs, axis=0)
+
+    return omega_meas_logs, omega_des_logs, omega_dot_logs
+
+def get_big_ang_values(omega_meas_logs, omega_des_logs, omega_dot_logs, thres_mag=1):
+    """
+    Get the angular values that are above a certain magnitude.
+    """
+    mag = np.linalg.norm(omega_dot_logs[:,:2], axis=1)
+    idx = np.where(mag >= thres_mag)[0]
+
+    omega_meas_logs = omega_meas_logs[idx]
+    omega_des_logs = omega_des_logs[idx]
+    omega_dot_logs = omega_dot_logs[idx]
 
     return omega_meas_logs, omega_des_logs, omega_dot_logs
 
@@ -186,6 +198,15 @@ def poly_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, deg=2):
     
     C = np.array(C_matrices)
 
+    return C, R2_values
+
+def plot_data(omega_meas_logs, omega_des_logs, omega_dot_logs):
+    """
+    Plot the data.
+    """
+    fig, axs = plt.subplots(3, 3, figsize=(15,15))
+    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process data files.')
@@ -196,13 +217,16 @@ if __name__ == "__main__":
 
     logs_dir = args.logs_dir
     # drop_idx_from_end = args.drop_idx_from_end
-    drop_idx_from_end = 50_000
+    drop_idx_from_end = 1000
 
     omega_meas_logs, omega_des_logs, omega_dot_logs = compile_all_data(logs_dir, drop_idx_from_end)
+
+    # omega_meas_logs, omega_des_logs, omega_dot_logs = get_big_ang_values(omega_meas_logs, omega_des_logs, omega_dot_logs, thres_mag=1)
 
     # C_lst, R2_lst = lstsq_fit_one(omega_meas_logs[:,0][:,np.newaxis], omega_des_logs[:,0][:,np.newaxis], omega_dot_logs[:,0][:,np.newaxis])
     # C_lst, R2_lst = lstsq_fit(omega_meas_logs[:,:-1], omega_des_logs[:,:-1], omega_dot_logs[:,:-1])
     C_lst, R2_lst = lstsq_fit(omega_meas_logs, omega_des_logs, omega_dot_logs)
     # C_const, R2_const = const_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, const=50)
+    # plot_data(omega_meas_logs, omega_des_logs, omega_dot_logs)
 
     IPython.embed()
