@@ -216,9 +216,9 @@ class DataCollectionRateAccel:
             random_z = np.random.uniform(self.min_height+1, 10, 1)
             self.xgoal = np.array([0, 0, 0, random_x.item(), random_y.item(), random_z.item(), 0, 0, 0]).reshape((self.nx, 1))
         elif self.track_type == "orient":
-            random_gamma = np.random.uniform(-np.pi/3.5, np.pi/3.5, 1)
-            random_beta = np.random.uniform(-np.pi/3.5, np.pi/3.5, 1)
-            random_alpha = np.random.uniform(-np.pi/3.5, np.pi/3.5, 1)
+            random_gamma = np.random.uniform(-np.pi/3, np.pi/3, 1)
+            random_beta = np.random.uniform(-np.pi/3, np.pi/3, 1)
+            random_alpha = np.random.uniform(-np.pi/3, np.pi/3, 1)
             random_z = np.random.uniform(self.min_height+3, 10, 1)
             self.xgoal = np.array([random_gamma.item(), random_beta.item(), random_alpha.item(), 0, 0, random_z.item(), 0, 0, 0]).reshape((self.nx, 1))
 

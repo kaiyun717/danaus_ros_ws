@@ -124,29 +124,63 @@ def lstsq_fit(omega_meas_logs, omega_des_logs, omega_dot_logs):
 
     return C, R2
 
-def lstsq_fit_one(omega_meas_logs, omega_des_logs, omega_dot_logs):
+def lstsq_fit_xyz(omega_meas_logs, omega_des_logs, omega_dot_logs):
     """
-    All the input arrays are of shape (N,1).
-    Fit a line to the data.
+    Fit a line to the data for x,y,z separately.
     """
-    N = omega_meas_logs.shape[0]
-    X = omega_des_logs - omega_meas_logs    # (N,1)
-    Y = omega_dot_logs                      # (N,1)
 
-    C_flat, residuals, _, _ = np.linalg.lstsq(X, Y, rcond=None)
-    # C = C_flat.reshape((3,3))
+    def lstsq_fit_one(omega_meas, omega_des, omega_dot):
+        C, residuals, _, _ = np.linalg.lstsq(omega_des - omega_meas, omega_dot, rcond=-1)
+        Y_pred = (omega_des - omega_meas) @ C
+        Y_mean = np.mean(omega_dot)
+        SS_tot = np.sum((omega_dot - Y_mean) ** 2)
+        SS_res = np.sum((omega_dot - Y_pred) ** 2)
+        R2 = 1 - (SS_res / SS_tot)
+        return C, R2
 
-    Y_pred_flat = X @ C_flat
+    C_list = []
+    R2_list = []
+    for i in range(3):
+        omega_meas = omega_meas_logs[:,i][:,np.newaxis]
+        omega_des = omega_des_logs[:,i][:,np.newaxis]
+        omega_dot = omega_dot_logs[:,i][:,np.newaxis]
+        C, R2 = lstsq_fit_one(omega_meas, omega_des, omega_dot)
+        C_list.append(C)
+        R2_list.append(R2)
     
-    # Step 4: Compute R^2 value
-    Y_mean = np.mean(Y)
-    SS_tot = np.sum((Y - Y_mean) ** 2)
-    SS_res = np.sum((Y - Y_pred_flat) ** 2)
-    R2 = 1 - (SS_res / SS_tot)
+    IPython.embed()
 
-    # IPython.embed()
+    return C_list, R2_list
+
+# def affine_fit_xyz(omega_meas_logs, omega_des_logs, omega_dot_logs):
+#     """
+#     Fit a line to the data for x,y,z separately.
+#     """
+
+#     def affine_fit_one(omega_meas, omega_des, omega_dot):
+#         gain = np.std(omega_dot) / np.std(omega_des - omega_meas)
+#         offset = np.mean((omega_des - omega_meas) - (omega_dot / gain))
+#         C = [gain, offset]
+#         Y_pred = ((omega_des - omega_meas) - offset) * gain
+#         Y_mean = np.mean(omega_dot)
+#         SS_tot = np.sum((omega_dot - Y_mean) ** 2)
+#         SS_res = np.sum((omega_dot - Y_pred) ** 2)
+#         R2 = 1 - (SS_res / SS_tot)
+#         return C, R2
+
+#     C_list = []
+#     R2_list = []
+#     for i in range(3):
+#         omega_meas = omega_meas_logs[:,i][:,np.newaxis]
+#         omega_des = omega_des_logs[:,i][:,np.newaxis]
+#         omega_dot = omega_dot_logs[:,i][:,np.newaxis]
+#         C, R2 = affine_fit_one(omega_meas, omega_des, omega_dot)
+#         C_list.append(C)
+#         R2_list.append(R2)
     
-    return C_flat, R2
+#     IPython.embed()
+
+#     return C_list, R2_list
 
 def const_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, const=100):
     """
@@ -177,28 +211,37 @@ def const_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, const=100):
     
     return C, R2
 
-def poly_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, deg=2):
-    N = omega_meas_logs.shape[0]
-    X = omega_des_logs - omega_meas_logs    # (N,3)
-    Y = omega_dot_logs                      # (N,3)
+def poly_fit_xyz(omega_meas_logs, omega_des_logs, omega_dot_logs, deg=2):
+    """
+    With degree 2, we get:
+    In [3]: p_list
+    Out[3]: 
+    [array([-0.07193628, 11.91001465,  0.04944787]),
+    array([ 0.03688765, 14.28639733,  0.10458604]),
+    array([-4.52841938e-03,  7.28431729e+00,  9.17177026e-03])]
 
-    poly = PolynomialFeatures(degree=deg)
-    X_poly = poly.fit_transform(X)
+    In [1]: residuals_list
+    Out[1]: [array([8.42152336e+08]), array([1.03179062e+09]), array([27732998.32005037])]
+    """
 
-    C_matrices = []
-    R2_values = []
+    def poly_fit_one(omega_meas, omega_des, omega_dot, deg=2):
+        p, residuals, rank, singular_values, rcond = np.polyfit(omega_des - omega_meas, omega_dot, deg=deg, full=True)
 
+        return p, residuals
+
+    p_list = []
+    residuals_list = []
     for i in range(3):
-        Y_i = Y[:,i]
-        reg = LinearRegression().fit(X_poly, Y_i)
-        C = reg.coef_
-        R2 = reg.score(X_poly, Y_i)
-        C_matrices.append(C)
-        R2_values.append(R2)
+        omega_meas = omega_meas_logs[:,i]
+        omega_des = omega_des_logs[:,i]
+        omega_dot = omega_dot_logs[:,i]
+        p, residuals = poly_fit_one(omega_meas, omega_des, omega_dot, deg=deg)
+        p_list.append(p)
+        residuals_list.append(residuals)
     
-    C = np.array(C_matrices)
+    IPython.embed()
 
-    return C, R2_values
+    return p_list, residuals_list
 
 def plot_data(omega_meas_logs, omega_des_logs, omega_dot_logs):
     """
@@ -223,10 +266,12 @@ if __name__ == "__main__":
 
     # omega_meas_logs, omega_des_logs, omega_dot_logs = get_big_ang_values(omega_meas_logs, omega_des_logs, omega_dot_logs, thres_mag=1)
 
-    # C_lst, R2_lst = lstsq_fit_one(omega_meas_logs[:,0][:,np.newaxis], omega_des_logs[:,0][:,np.newaxis], omega_dot_logs[:,0][:,np.newaxis])
+    # C_lst, R2_lst = lstsq_fit_xyz(omega_meas_logs, omega_des_logs, omega_dot_logs)
+    # C_lst, R2_lst = affine_fit_xyz(omega_meas_logs, omega_des_logs, omega_dot_logs)
     # C_lst, R2_lst = lstsq_fit(omega_meas_logs[:,:-1], omega_des_logs[:,:-1], omega_dot_logs[:,:-1])
-    C_lst, R2_lst = lstsq_fit(omega_meas_logs, omega_des_logs, omega_dot_logs)
+    # C_lst, R2_lst = lstsq_fit(omega_meas_logs, omega_des_logs, omega_dot_logs)
     # C_const, R2_const = const_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, const=50)
+    C_poly, R2_poly = poly_fit_xyz(omega_meas_logs, omega_des_logs, omega_dot_logs, deg=3)
     # plot_data(omega_meas_logs, omega_des_logs, omega_dot_logs)
 
     IPython.embed()
