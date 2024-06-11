@@ -27,11 +27,11 @@ def load_data(folder_path, drop_idx_from_end=None):
     omega_timestamp_log = log['omega_timestamp']
     
     if drop_idx_from_end is not None:
-        state_log = state_log[:, 1000:-drop_idx_from_end]
-        input_log = input_log[:, 1000:-drop_idx_from_end]
-        error_log = error_log[:, 1000:-drop_idx_from_end]
-        omega_log = omega_log[:, 1000:-drop_idx_from_end]
-        omega_timestamp_log = omega_timestamp_log[:, 1000:-drop_idx_from_end]
+        state_log = state_log[:, 50_000:-drop_idx_from_end]
+        input_log = input_log[:, 50_000:-drop_idx_from_end]
+        error_log = error_log[:, 50_000:-drop_idx_from_end]
+        omega_log = omega_log[:, 50_000:-drop_idx_from_end]
+        omega_timestamp_log = omega_timestamp_log[:, 50_000:-drop_idx_from_end]
         
     params = np.load(os.path.join(folder_path, 'params.npy'), allow_pickle=True).item()
     
@@ -99,26 +99,17 @@ def lstsq_fit(omega_meas_logs, omega_des_logs, omega_dot_logs):
     X = omega_des_logs - omega_meas_logs    # (N,3)
     Y = omega_dot_logs                      # (N,3)
 
-    A = np.zeros((N*3, 9))
-    for i in range(N):
-        A[3*i:3*(i+1),:] = np.kron(np.eye(3), X[i,:])
+    C, residuals, _, _ = np.linalg.lstsq(X, Y, rcond=None)
 
-    Y_flat = Y.flatten()
+    Y_pred = X @ C
 
-    C_flat, residuals, _, _ = np.linalg.lstsq(A, Y_flat, rcond=None)
-    C = C_flat.reshape((3,3))
-
-    Y_pred_flat = A @ C_flat
-    Y_pred = Y_pred_flat.reshape(N, 3)
-    
-    # Step 4: Compute R^2 value
-    Y_mean = np.mean(Y_flat)
-    SS_tot = np.sum((Y_flat - Y_mean) ** 2)
-    SS_res = np.sum((Y_flat - Y_pred_flat) ** 2)
+    Y_mean = np.mean(Y, axis=0)
+    SS_tot = np.sum((Y - Y_mean) ** 2, axis=0)
+    SS_res = np.sum((Y - Y_pred) ** 2, axis=0)
     R2 = 1 - (SS_res / SS_tot)
-
-    # IPython.embed()
     
+    IPython.embed()
+
     return C, R2
 
 def lstsq_fit_one(omega_meas_logs, omega_des_logs, omega_dot_logs):
@@ -194,9 +185,6 @@ def poly_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, deg=2):
         R2_values.append(R2)
     
     C = np.array(C_matrices)
-    R2 = np.array(R2_values)
-
-    return C, R2
 
 
 if __name__ == "__main__":
@@ -208,12 +196,13 @@ if __name__ == "__main__":
 
     logs_dir = args.logs_dir
     # drop_idx_from_end = args.drop_idx_from_end
-    drop_idx_from_end = 1000
+    drop_idx_from_end = 50_000
 
     omega_meas_logs, omega_des_logs, omega_dot_logs = compile_all_data(logs_dir, drop_idx_from_end)
 
-    C_lst, R2_lst = lstsq_fit_one(omega_meas_logs[:,0][:,np.newaxis], omega_des_logs[:,0][:,np.newaxis], omega_dot_logs[:,0][:,np.newaxis])
-    # C_lst, R2_lst = lstsq_fit(omega_meas_logs, omega_des_logs, omega_dot_logs)
+    # C_lst, R2_lst = lstsq_fit_one(omega_meas_logs[:,0][:,np.newaxis], omega_des_logs[:,0][:,np.newaxis], omega_dot_logs[:,0][:,np.newaxis])
+    # C_lst, R2_lst = lstsq_fit(omega_meas_logs[:,:-1], omega_des_logs[:,:-1], omega_dot_logs[:,:-1])
+    C_lst, R2_lst = lstsq_fit(omega_meas_logs, omega_des_logs, omega_dot_logs)
     # C_const, R2_const = const_fit(omega_meas_logs, omega_des_logs, omega_dot_logs, const=50)
 
     IPython.embed()
