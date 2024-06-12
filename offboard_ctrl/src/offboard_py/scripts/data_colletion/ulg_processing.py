@@ -149,6 +149,18 @@ if __name__ == "__main__":
     common_timestamps = get_common_timestamps(ang_vel_ulg_0610_133851, rate_set_ulg_0610_133851)
     curr_timestamps, next_timestamps = get_timestamps_with_same_dt(common_timestamps)
     omega_dot, omega_meas, omega_des = get_data_for_same_dt(curr_timestamps, next_timestamps, ang_vel_ulg_0610_133851, rate_set_ulg_0610_133851)
+
+    ##############
+    ## RESULTS ###
+    ##############
+    ## If small_setpoint to 0.1:
+    ## >>> In [1]: R2_values
+    ## >>> Out[1]: array([[0.3828725 , 0.46113398, 0.24129362]])
+
+    ## Without any cutoff:
+    ## >>> In [2]: R2_values
+    ## >>> Out[2]: array([[0.3895024 , 0.46733396, 0.24012244]])
+
     ######## OKAY DATA ########
 
     # ######## BAD DATA ########
@@ -160,18 +172,20 @@ if __name__ == "__main__":
     # rate_set_ulg_list = [rate_set_ulg_0611_183152]
     # ######## BAD DATA ########
 
-    # If small_setpoint to 0.1:
-    # >>> In [1]: R2_values
-    # >>> Out[1]: array([[0.3828725 , 0.46113398, 0.24129362]])
+    # ######## 50 Hz ctrl ########
+    # ang_vel_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_angular_velocity_0.csv", delimiter=',')
+    # rate_set_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_rates_setpoint_0.csv", delimiter=',')
+    # rate_set_ulg_0611_190110 = delete_setpoints_before_takeoff(rate_set_ulg_0611_190110)
 
-    # Without any cutoff:
-    # >>> In [2]: R2_values
-    # >>> Out[2]: array([[0.3895024 , 0.46733396, 0.24012244]])
+    # ang_vel_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_angular_velocity_0.csv", delimiter=',')
+    # rate_set_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_rates_setpoint_0.csv", delimiter=',')
+
+    # ang_vel_ulg_list = [ang_vel_ulg_0611_190110]
+    # rate_set_ulg_list = [rate_set_ulg_0611_190110]
+    # ######## 50 Hz ctrl ########
 
 
-
-
-    omega_dot, omega_meas, omega_des = get_all_data(ang_vel_ulg_list, rate_set_ulg_list, dt=60_000)
+    omega_dot, omega_meas, omega_des = get_all_data(ang_vel_ulg_list, rate_set_ulg_list, dt=40_000)
     # omega_dot, omega_meas, omega_des = delete_small_setpoints(omega_dot, omega_meas, omega_des, mag_tol=0.1)
     # omega_dot, omega_meas, omega_des = delete_big_setpoints(omega_dot, omega_meas, omega_des, mag_tol=15)
     
