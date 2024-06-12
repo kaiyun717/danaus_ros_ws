@@ -7,7 +7,8 @@ def delete_setpoints_before_takeoff(rate_set_np):
     indices = np.where(np.abs(rate_set_np[:,6]) > 0.3)[0]
     if indices.size == 0:
         raise ValueError("No takeoff detected in the rate setpoint data")
-    return rate_set_np[indices[0]:, :]
+    # return rate_set_np[indices[0]:, :]    # THIS IS NOT CORRECT SINCE YOU MAY HAVE ZERO SETPOINTS WHEN LANDING
+    return rate_set_np[indices, :]
 
 def get_common_timestamps(ang_vel_np, rate_set_np):
     ang_vel_timestamps = ang_vel_np[:, 0]
@@ -32,6 +33,15 @@ def get_timestamps_with_same_dt(common_timestamps, dt=20_000):
 
 def get_data_for_same_dt(curr, next, ang_vel_np, rate_set_np):
 
+    # IPython.embed()
+
+    ### There are repeated timestamps in the data. We need to remove them.
+    unique_ang_vel, unique_ang_vel_indices = np.unique(ang_vel_np[:, 0], return_index=True)
+    ang_vel_np = ang_vel_np[unique_ang_vel_indices, :]
+    unique_rate_set, unique_rate_set_indices = np.unique(rate_set_np[:, 0], return_index=True)
+    rate_set_np = rate_set_np[unique_rate_set_indices, :]
+    
+    ### Get the indices of the current and next timestamps in the data
     omega_des_indices = np.where(np.isin(rate_set_np[:, 0], curr))
     omega_meas_indices = np.where(np.isin(ang_vel_np[:, 0], curr))
     omega_dot_indices = np.where(np.isin(ang_vel_np[:, 0], next))
@@ -114,6 +124,23 @@ def lstsq_fit(omega_dot, omega_meas, omega_des):
         R2_values[0,i] = R2
     return C, R2_values
 
+def lstsq_fit_all(omega_dot, omega_meas, omega_des):
+    omega_dot_all = np.reshape(omega_dot, (-1, 1))
+    omega_meas_all = np.reshape(omega_meas, (-1, 1))
+    omega_des_all = np.reshape(omega_des, (-1, 1))
+
+    X = omega_des_all - omega_meas_all
+    Y = omega_dot_all
+
+    C, residuals, _, _ = np.linalg.lstsq(X, Y, rcond=None)
+
+    SSR = residuals[0]
+    SST = np.sum((Y - np.mean(Y))**2)
+    R2 = 1 - SSR/SST
+
+    print("R2: ", R2)
+    return C, R2
+
 
 if __name__ == "__main__":
 
@@ -143,12 +170,8 @@ if __name__ == "__main__":
     rate_set_ulg_0610_204621 = genfromtxt(log_dir_ulg_0610_204621 + '/00_45_44_vehicle_rates_setpoint_0.csv', delimiter=',')
     rate_set_ulg_0610_204621 = delete_setpoints_before_takeoff(rate_set_ulg_0610_204621)
 
-    ang_vel_ulg_list = [ang_vel_ulg_0610_133851, ang_vel_ulg_0610_173119, ang_vel_ulg_0610_204621]
-    rate_set_ulg_list = [rate_set_ulg_0610_133851, rate_set_ulg_0610_173119, rate_set_ulg_0610_204621]
-
-    common_timestamps = get_common_timestamps(ang_vel_ulg_0610_133851, rate_set_ulg_0610_133851)
-    curr_timestamps, next_timestamps = get_timestamps_with_same_dt(common_timestamps)
-    omega_dot, omega_meas, omega_des = get_data_for_same_dt(curr_timestamps, next_timestamps, ang_vel_ulg_0610_133851, rate_set_ulg_0610_133851)
+    # ang_vel_ulg_list = [ang_vel_ulg_0610_133851, ang_vel_ulg_0610_173119, ang_vel_ulg_0610_204621]
+    # rate_set_ulg_list = [rate_set_ulg_0610_133851, rate_set_ulg_0610_173119, rate_set_ulg_0610_204621]
 
     ##############
     ## RESULTS ###
@@ -172,24 +195,25 @@ if __name__ == "__main__":
     # rate_set_ulg_list = [rate_set_ulg_0611_183152]
     # ######## BAD DATA ########
 
-    # ######## 50 Hz ctrl ########
-    # ang_vel_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_angular_velocity_0.csv", delimiter=',')
-    # rate_set_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_rates_setpoint_0.csv", delimiter=',')
-    # rate_set_ulg_0611_190110 = delete_setpoints_before_takeoff(rate_set_ulg_0611_190110)
+    ######## 50 Hz ctrl ########
+    ang_vel_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_angular_velocity_0.csv", delimiter=',')
+    rate_set_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_rates_setpoint_0.csv", delimiter=',')
+    rate_set_ulg_0611_190110 = delete_setpoints_before_takeoff(rate_set_ulg_0611_190110)
 
-    # ang_vel_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_angular_velocity_0.csv", delimiter=',')
-    # rate_set_ulg_0611_190110 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_190110-23_00_27/23_00_27_vehicle_rates_setpoint_0.csv", delimiter=',')
+    ang_vel_ulg_0611_194231 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_194231-23_42_03/23_42_03_vehicle_angular_velocity_0.csv", delimiter=',')
+    rate_set_ulg_0611_194231 = genfromtxt("/home/kai/nCBF-drone/flight_logs/0611_194231-23_42_03/23_42_03_vehicle_rates_setpoint_0.csv", delimiter=',')
+    rate_set_ulg_0611_194231 = delete_setpoints_before_takeoff(rate_set_ulg_0611_194231)
+    ######## 50 Hz ctrl ########
 
-    # ang_vel_ulg_list = [ang_vel_ulg_0611_190110]
-    # rate_set_ulg_list = [rate_set_ulg_0611_190110]
-    # ######## 50 Hz ctrl ########
-
+    ang_vel_ulg_list = [ang_vel_ulg_0611_190110, ang_vel_ulg_0611_194231, ang_vel_ulg_0610_133851, ang_vel_ulg_0610_173119, ang_vel_ulg_0610_204621]
+    rate_set_ulg_list = [rate_set_ulg_0611_190110, rate_set_ulg_0611_194231, rate_set_ulg_0610_133851, rate_set_ulg_0610_173119, rate_set_ulg_0610_204621]
 
     omega_dot, omega_meas, omega_des = get_all_data(ang_vel_ulg_list, rate_set_ulg_list, dt=40_000)
     # omega_dot, omega_meas, omega_des = delete_small_setpoints(omega_dot, omega_meas, omega_des, mag_tol=0.1)
     # omega_dot, omega_meas, omega_des = delete_big_setpoints(omega_dot, omega_meas, omega_des, mag_tol=15)
     
-    C, R2_values = lstsq_fit(omega_dot, omega_meas, omega_des)
+    # C, R2_values = lstsq_fit(omega_dot, omega_meas, omega_des)
+    C, R2_values = lstsq_fit_all(omega_dot, omega_meas, omega_des)
     IPython.embed()
     print("C: ", C)
     print("R2 values: ", R2_values)
