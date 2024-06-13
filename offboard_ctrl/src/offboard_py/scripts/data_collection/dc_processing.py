@@ -2,7 +2,8 @@ import IPython
 import os
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as pltg
+import matplotlib.pyplot as pltg
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 
@@ -69,8 +70,13 @@ def compile_all_data(logs_dir, drop_idx_from_end):
     """
     Compiling all the data from dc_log_folders.
     """
+<<<<<<< HEAD
+    # dc_log_folders = find_all_folders(logs_dir)
+    dc_log_folders = ["/home/cdundun/Documents/CMU/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/data_collection/0610_133851-DC-Sim-Good"]
+=======
     dc_log_folders = find_all_folders(logs_dir)
     # dc_log_folders = ["/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/data_collection/0610_173119-DC-Sim-Good"]
+>>>>>>> c267e9d9c4fe5651577ce0369f352c2e4bae96c8
 
     omega_meas_logs = []
     omega_des_logs = []
