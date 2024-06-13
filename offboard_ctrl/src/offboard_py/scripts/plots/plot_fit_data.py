@@ -22,7 +22,7 @@ omega_dot_predicted = C*(omega_des-omega_meas)
 
 # Create regression line to plot
 
-# Plot for y
+# Plot for x
 plt.figure()
 plt.scatter(list(range(omega_dot.shape[0])), omega_dot[:,0], label='(X) Measured $\dot{\omega}$', s=10)
 plt.scatter(list(range(omega_dot_predicted.shape[0])), omega_dot_predicted[:,0], label='(X) Predicted $\dot{\omega}$', s=10)
