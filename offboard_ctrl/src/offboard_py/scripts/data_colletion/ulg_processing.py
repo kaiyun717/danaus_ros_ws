@@ -89,6 +89,18 @@ def delete_small_setpoints(omega_dot, omega_meas, omega_des, mag_tol=0.5):
     omega_des = omega_des[indices, :]
     return omega_dot, omega_meas, omega_des
 
+def delete_small_omega_dot(omega_dot, omega_meas, omega_des, mag_tol=1):
+    """
+    This is not the best?
+    """
+    mask = np.all(np.abs(omega_dot) >= mag_tol, axis=1)
+    indices = np.where(mask)[0]
+
+    omega_dot = omega_dot[indices, :]
+    omega_meas = omega_meas[indices, :]
+    omega_des = omega_des[indices, :]
+    return omega_dot, omega_meas, omega_des
+
 def delete_big_setpoints(omega_dot, omega_meas, omega_des, mag_tol=15):
     """
     This is not the best?
@@ -122,6 +134,9 @@ def lstsq_fit(omega_dot, omega_meas, omega_des):
         R2 = 1 - SSR/SST
         print("R2 for C{}: {}".format(i, R2)) 
         R2_values[0,i] = R2
+
+    IPython.embed()
+
     return C, R2_values
 
 def lstsq_fit_all(omega_dot, omega_meas, omega_des):
@@ -139,6 +154,9 @@ def lstsq_fit_all(omega_dot, omega_meas, omega_des):
     R2 = 1 - SSR/SST
 
     print("R2: ", R2)
+
+    IPython.embed()
+
     return C, R2
 
 
@@ -209,11 +227,19 @@ if __name__ == "__main__":
     rate_set_ulg_list = [rate_set_ulg_0611_190110, rate_set_ulg_0611_194231, rate_set_ulg_0610_133851, rate_set_ulg_0610_173119, rate_set_ulg_0610_204621]
 
     omega_dot, omega_meas, omega_des = get_all_data(ang_vel_ulg_list, rate_set_ulg_list, dt=40_000)
-    # omega_dot, omega_meas, omega_des = delete_small_setpoints(omega_dot, omega_meas, omega_des, mag_tol=0.1)
+    # omega_dot, omega_meas, omega_des = delete_small_setpoints(omega_dot, omega_meas, omega_des, mag_tol=1)
+    # omega_dot, omega_meas, omega_des = delete_small_omega_dot(omega_dot, omega_meas, omega_des, mag_tol=10)
     # omega_dot, omega_meas, omega_des = delete_big_setpoints(omega_dot, omega_meas, omega_des, mag_tol=15)
     
     # C, R2_values = lstsq_fit(omega_dot, omega_meas, omega_des)
     C, R2_values = lstsq_fit_all(omega_dot, omega_meas, omega_des)
+
+    np.save("omega_dot.npy", omega_dot)
+    np.save("omega_meas.npy", omega_meas)
+    np.save("omega_des.npy", omega_des)
+    np.save("C.npy", C)
+    np.save("R2_values.npy", R2_values)
+
     IPython.embed()
     print("C: ", C)
     print("R2 values: ", R2_values)
