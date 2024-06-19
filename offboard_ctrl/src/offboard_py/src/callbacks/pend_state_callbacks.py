@@ -93,7 +93,7 @@ class PendulumCB:
         xi = np.sqrt(self.L_p**2 - rs_pose[0]**2 - rs_pose[1]**2)
         pitch = np.arctan2(rs_pose[0], xi)      # Pitch is about the y-axis. Thus, use x and z.
         roll = np.arctan2(-rs_pose[1], xi)       # Roll is about the x-axis. Thus, use y and z.
-        return np.array([pitch, roll])
+        return np.array([roll, pitch])
 
     def get_rs_ang_vel(self, vehicle_pose=None, vehicle_vel=None):
         """
@@ -103,7 +103,7 @@ class PendulumCB:
         rs_vel = self.get_rs_vel(vehicle_vel)
         pitch_dot = rs_vel[0]/self.L_p
         roll_dot = -rs_vel[1]/self.L_p
-        return np.array([pitch_dot, roll_dot])
+        return np.array([roll_dot, pitch_dot])
     
     def get_rs_vel(self, vehicle_vel=None, dt=None):
         """
