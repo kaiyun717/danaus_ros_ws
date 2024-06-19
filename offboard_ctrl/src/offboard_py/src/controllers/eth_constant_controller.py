@@ -5,6 +5,7 @@ Script for running the ETH constant position tracking controller.
 
 import numpy as np
 import scipy
+import scipy.linalg
 import IPython
 
 
