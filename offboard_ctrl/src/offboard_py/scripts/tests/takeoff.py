@@ -18,7 +18,7 @@ def state_cb(msg):
 
 
 if __name__ == "__main__":
-    print("Helllloooo Kai")
+    print("Helllloooo Chase")
 
     rospy.init_node("takeoff_and_land_node")
 

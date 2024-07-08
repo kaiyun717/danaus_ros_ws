@@ -1,0 +1,14 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py",
+        "/home/cdundun/nCBF-drone/cbf_synthesis_small"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py",
+        "/home/cdundun/nCBF-drone/cbf_synthesis_small"
+    ]
+}

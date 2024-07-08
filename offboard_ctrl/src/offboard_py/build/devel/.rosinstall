@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/build/devel/setup.sh

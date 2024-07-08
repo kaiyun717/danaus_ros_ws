@@ -18,8 +18,9 @@ class VehicleStateCB:
         self.velocity = TwistStamped()
         self.accel = TwistStamped()
         if mode == "real":
-            # self.pose_sub = rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.pose_cb)
-            self.vicon_sub = rospy.Subscriber('vicon/danaus12/danaus12', TransformStamped, self.pose_cb)
+            #self.pose_sub = rospy.Subscriber('mavros/local_position/pose', PoseStamped, self.pose_cb)
+            self.vicon_sub = rospy.Subscriber('mavros/vision_pose/pose', PoseStamped, self.pose_cb)     # Scaife Optitrack
+            # self.vicon_sub = rospy.Subscriber('vicon/danaus12/danaus12', TransformStamped, self.pose_cb)  # Gates Vicon
         elif mode == "sim":
             self.pose_sub = rospy.Subscriber('gazebo/model_states', ModelStates, self.pose_cb)
         
@@ -47,11 +48,15 @@ class VehicleStateCB:
             self.velocity.twist = msg.twist[2]
             # print(type(msg.pose[2]))
         elif self.mode == "real":
-            # self.pose = msg
-            self.pose.pose.position.x = msg.transform.translation.x
-            self.pose.pose.position.y = msg.transform.translation.y
-            self.pose.pose.position.z = msg.transform.translation.z
-            self.pose.pose.orientation = msg.transform.rotation
+            # self.pose.pose.position.x = msg.transform.translation.x
+            # self.pose.pose.position.y = msg.transform.translation.y
+            # self.pose.pose.position.z = msg.transform.translation.z
+            # self.pose.pose.orientation = msg.transform.rotation
+            
+            self.pose.pose.position.x = msg.pose.position.x
+            self.pose.pose.position.y = msg.pose.position.y
+            self.pose.pose.position.z = msg.pose.position.z
+            self.pose.pose.orientation = msg.pose.orientation
 
     def velocity_cb(self, msg):
         if self.mode == "sim":
@@ -116,11 +121,14 @@ class VehicleStateCB:
 if __name__ == "__main__":
     rospy.init_node('vehicle_state_cb', anonymous=True)
     
-    state_cb = VehicleStateCB("sim")
-    rate = rospy.Rate(2)
+    state_cb = VehicleStateCB("real")
+    rate = rospy.Rate(20)
 
     while not rospy.is_shutdown():
         # print("XYZ Pose: ", state_cb.get_xyz_pose())
         # print("Yaw, Pitch, Roll: ", state_cb.get_zyx_angles()*180/np.pi)
-        print(state_cb.get_xyz_angular_velocity_body_timestamped())
+        # print(state_cb.get_xyz_angular_velocity_body_timestamped())
+        print(state_cb.get_xyz_pose())
+        # print(state_cb.get_xyz_angles())
+        # print(state_cb.get_xyz_velocity())
         

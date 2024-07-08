@@ -1,2 +1,2 @@
-mavros_px4:offboard_py:vicon_bridge
--DCATKIN_DEVEL_PREFIX=/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel -DCMAKE_INSTALL_PREFIX=/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/install -G Unix Makefiles
+mavros_px4:mocap_ros:offboard_py:vicon_bridge
+-DCATKIN_DEVEL_PREFIX=/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/devel -DCMAKE_INSTALL_PREFIX=/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/install -G Unix Makefiles
