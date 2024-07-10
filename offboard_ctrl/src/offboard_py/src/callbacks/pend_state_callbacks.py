@@ -33,12 +33,12 @@ class PendulumCB:
         self.avg_vel = np.array([0, 0])
         self.avg_pend_vel = np.array([0, 0])
         # Moving average weight
-        self.w_avg = 0.5
+        self.w_avg = 0.1
 
         if mode == 'sim':
             self.pose_sub = rospy.ServiceProxy('/gazebo/get_link_state', GetLinkState)
         elif mode == 'real':
-            self.pose_sub = rospy.Subscriber('vicon/pose/pend/pend', PoseStamped, self.pose_cb)
+            self.pose_sub = rospy.Subscriber('/optitrack/pendulum', PoseStamped, self.pose_cb)
         else:
             raise ValueError('Invalid mode')
 
@@ -68,9 +68,9 @@ class PendulumCB:
         """
         r = self.pose.pose.position.x - vehicle_pose[0]
         s = self.pose.pose.position.y - vehicle_pose[1]
-        if rospy.Time.now() - self.pose.header.stamp > rospy.Duration(0.2):
+        if rospy.Time.now() - self.pose.header.stamp > rospy.Duration(0.25):
             rospy.logwarn_throttle(1, "Pendulum pose is too old!")
-            return None
+            return np.array([0, 0])
         return np.array([r, s])
     
     def _get_rs_pose_sim(self, vehicle_pose):
@@ -131,6 +131,11 @@ class PendulumCB:
         RS velocities for the pendulum in real-world experiments.
         We use an moving average to smoothen out the velocity calculations.
         """
+        
+        
+        #########################################################################
+        ##### Under the assumption that we don't get perfect pendulum state #####
+        #########################################################################
         # if len(self.pose_deque) == self.dq_len:
         #     self.prev_pose = self.pose_deque.popleft()
         # else:
@@ -138,29 +143,27 @@ class PendulumCB:
         current_time = self.pose.header.stamp.to_sec()
         prev_time = self.prev_pose.header.stamp.to_sec()
         dt = current_time - prev_time
-        if dt < 1e-5:
+        if dt < 1e-10:
             print("Time difference is too small!")
             return np.array([0, 0])
         
-        r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt 
-        s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt 
-        self.avg_vel = (1 - self.w_avg)*np.array([r, s]) + self.w_avg*self.avg_vel
+        r_dot = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt - vehicle_vel[0]
+        s_dot = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt - vehicle_vel[1]
+        return np.array([r_dot, s_dot])
+        # self.avg_vel = (1 - self.w_avg)*np.array([r_dot, s_dot]) + self.w_avg*self.avg_vel
+        # return self.avg_vel - vehicle_vel[:2]
         
-        # rs_vel_msg = TwistStamped()
-        # rs_vel_msg.twist.linear.x = r
-        # rs_vel_msg.twist.linear.y = s
-        # rs_vel_msg.header.stamp = rospy.Time.now()
-        # self.rs_vel_pub.publish(rs_vel_msg)
-
-        # rs_vel_avg_msg = TwistStamped()
-        # rs_vel_avg_msg.twist.linear.x = self.avg_vel[0]
-        # rs_vel_avg_msg.twist.linear.y = self.avg_vel[1]
-        # rs_vel_avg_msg.header.stamp = rospy.Time.now()
-        # self.rs_vel_avg_pub.publish(rs_vel_avg_msg)
-
-        # rospy.loginfo(f"Velocity: r: {r}, s: {s}")
-        # rospy.loginfo(f"Avg.Vel.: r: {self.avg_vel[0]}, s: {self.avg_vel[1]}")
-        return self.avg_vel - vehicle_vel[:2]
+        ###################################################################
+        ##### Under the assumption that we get perfect pendulum state #####
+        ###################################################################
+        # current_time = self.pose.header.stamp.to_sec()
+        # prev_time = self.prev_pose.header.stamp.to_sec()
+        # dt = current_time - prev_time
+        # r = (self.pose.pose.position.x - self.prev_pose.pose.position.x) / dt - vehicle_vel[0]
+        # s = (self.pose.pose.position.y - self.prev_pose.pose.position.y) / dt - vehicle_vel[1]
+        # # rospy.loginfo(f"Velocity: r: {r}, s: {s}")
+        # return np.array([r, s])
+        ###################################################################
     
 
 if __name__ == "__main__":
@@ -168,8 +171,8 @@ if __name__ == "__main__":
 
     rospy.init_node('pendulum_state_cb', anonymous=True)
     
-    pend_cb = PendulumCB("sim")
-    quad_cb = VehicleStateCB("sim")
+    pend_cb = PendulumCB("real", "danaus12_old")
+    quad_cb = VehicleStateCB("real")
     rate = rospy.Rate(100)
 
     while not rospy.is_shutdown():
@@ -178,5 +181,6 @@ if __name__ == "__main__":
         pend_pose = pend_cb.get_rs_pose(quad_pose)
         pend_vel = pend_cb.get_rs_vel(quad_vel)
         print(f"{pend_pose=}")
+        print(f"{pend_vel=}")
         
         rate.sleep()

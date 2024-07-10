@@ -10,7 +10,8 @@ import IPython
 
 
 class ConstantPositionTracker:
-    def __init__(self, cont_type, L, Q, R, xyz_goal, dt) -> None:
+    def __init__(self, mode, cont_type, L, Q, R, xyz_goal, dt) -> None:
+        self.mode = mode
         self.cont_type = cont_type
         self.L = L      # length from the base of the pendulum to the center of mass
         self.Q = Q      # State cost matrix
@@ -19,6 +20,11 @@ class ConstantPositionTracker:
         self.g = 9.81   # Gravity
         self.nx = 13    # Number of states
         self.nu = 4     # Number of inputs
+        
+        if self.mode == "sim":
+                assert L == 0.5, "L should be 0.5 for this controller"
+        elif self.mode == "real":
+            assert L == 0.69, "L should be 0.5 for this controller"
 
         if self.cont_type == "rs_og":
             self.Ac = np.array([[0, 0, 0, 1, 0, 0, 0,  0,       0,       0,             0,             0, 0],
@@ -53,7 +59,6 @@ class ConstantPositionTracker:
             self.xgoal = (np.array([xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))   
             self.ugoal = (np.array([0, 0, 0, self.g]))
         elif self.cont_type == "rs":
-            assert L == 0.5, "L should be 0.5 for this controller"
             self.Ad = np.array([[         1,            0, 0, 0, 0, 0,    0,    0,    0,         0,         0,          0,          0], 
                                 [         0,            1, 0, 0, 0, 0,    0,    0,    0,         0,         0,          0,          0], 
                                 [         0,            0, 1, 0, 0, 0,    0,    0,    0,         0,         0,          0,          0], 
@@ -82,36 +87,48 @@ class ConstantPositionTracker:
                                 [    0, 0.00049058,           0,    0]])
             self.xgoal = (np.array([0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0, 0, 0, 0, 0]))  
             self.ugoal = (np.array([self.g, 0, 0, 0])) 
-        elif self.cont_type == "tp":
-            assert L == 0.5, "L should be 0.5 for this controller"
-            self.Ad = np.array([[         1,           0, 0, 0, 0, 0,    0,    0,    0,        0,        0,         0,         0],
-                                [         0,           1, 0, 0, 0, 0,    0,    0,    0,        0,        0,         0,         0],
-                                [         0,           0, 1, 0, 0, 0,    0,    0,    0,        0,        0,         0,         0],
-                                [         0,   0.0004905, 0, 1, 0, 0, 0.01,    0,    0,        0,        0,         0,         0],
-                                [-0.0004905,           0, 0, 0, 1, 0,    0, 0.01,    0,        0,        0,         0,         0],
-                                [         0,           0, 0, 0, 0, 1,    0,    0, 0.01,        0,        0,         0,         0],
-                                [         0,      0.0981, 0, 0, 0, 0,    1,    0,    0,        0,        0,         0,         0],
-                                [   -0.0981,           0, 0, 0, 0, 0,    0,    1,    0,        0,        0,         0,         0],
-                                [         0,           0, 0, 0, 0, 0,    0,    0,    1,        0,        0,         0,         0],
-                                [         0, -0.00073584, 0, 0, 0, 0,    0,    0,    0,  1.00074,        0, 0.0100025,         0],
-                                [-0.00073584,          0, 0, 0, 0, 0,    0,    0,    0,        0,  1.00074,         0, 0.0100025],
-                                [         0,   -0.147186, 0, 0, 0, 0,    0,    0,    0, 0.147186,        0,   1.00074,         0],
-                                [ -0.147186,           0, 0, 0, 0, 0,    0,    0,    0,        0, 0.147186,         0,   1.00074]])
-            self.Bd = np.array([[    0,       0.01,          0,  0],
-                                [    0,          0,       0.01,  0],
-                                [    0,          0,          0,  0.01],
-                                [    0,          0,  1.635e-06,  0],
-                                [    0, -1.635e-06,          0,  0],
-                                [5e-05,          0,          0,  0],
-                                [    0,          0,  0.0004905,  0],
-                                [    0, -0.0004905,          0,  0],
-                                [ 0.01,          0,          0,  0],
-                                [    0,          0, -2.4525e-06, 0],
-                                [    0, -2.4525e-06,          0, 0],
-                                [    0,          0, -0.00073584, 0],
-                                [    0, -0.00073584,          0, 0]])
-            self.xgoal = (np.array([0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0, 0, 0, 0, 0])) 
-            self.ugoal = (np.array([self.g, 0, 0, 0])) 
+        # elif self.cont_type == "tp":
+        #     L = self.L * 2
+        #     g = self.g
+        #     self.Ac = np.array([[           0,            0, 0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                         [           0,            0, 0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                         [           0,            0, 0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                         [           0,            0, 0,           0,           0, 1, 0, 0, 0, 0, 0, 0, 0],
+        #                         [           0,            0, 0,           0,           0, 0, 1, 0, 0, 0, 0, 0, 0],
+        #                         [-(3*g)/(2*L),            0, 0, (3*g)/(2*L),           0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                         [           0, -(3*g)/(2*L), 0,           0, (3*g)/(2*L), 0, 0, 0, 0, 0, 0, 0, 0],
+        #                         [           0,            0, 0,           0,           0, 0, 0, 0, 0, 0, 1, 0, 0],
+        #                         [           0,            0, 0,           0,           0, 0, 0, 0, 0, 0, 0, 1, 0],
+        #                         [           0,            0, 0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 1],
+        #                         [           0,            g, 0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                         [          -g,            0, 0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
+        #                         [           0,            0, 0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0]])
+        #     self.Bc = np.array([[0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, C, 0, 0],
+        #                         [0, 0, C, 0],
+        #                         [0, 0, 0, C],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [0, 0, 0, 0],
+        #                         [1, 0, 0, 0]])
+        #     exp_matrix = scipy.linalg.expm(np.block([[self.Ac, self.Bc], [np.zeros((self.nu, self.nx + self.nu))]]) * self.dt)
+        #     self.Ad = exp_matrix[:self.nx, :self.nx]
+        #     self.Bd = exp_matrix[:self.nx, self.nx:]
+        #     self.xgoal = (np.array([0, 0, 0, 0, 0, 0, 0, xyz_goal[0], xyz_goal[1], xyz_goal[2], 0, 0, 0]))   
+        #     self.ugoal = (np.array([g, 0, 0, 0]))
+        
+        # IPython.embed()
+
+        self.xgoal = self.xgoal.reshape((self.nx, 1))
+        self.ugoal = self.ugoal.reshape((self.nu, 1))
         
         # IPython.embed()
 

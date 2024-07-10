@@ -9,8 +9,9 @@ import scipy.linalg
 import IPython
 
 
-class ConstantPositionTracker:
-    def __init__(self, cont_type, L, Q, R, xyz_goal, dt) -> None:
+class ConstantPositionOmegaTracker:
+    def __init__(self, mode, cont_type, L, Q, R, xyz_goal, dt) -> None:
+        self.mode = mode
         self.cont_type = cont_type
         self.L = L      # length from the base of the pendulum to the center of mass
         self.Q = Q      # State cost matrix
@@ -21,10 +22,15 @@ class ConstantPositionTracker:
         self.nu = 4     # Number of inputs
 
         if self.cont_type == "tp":
-            assert self.L == 0.5
+            if self.mode == "sim":
+                assert self.L == 0.5
+                C = 25.48459179
+            elif self.mode == "real":
+                assert self.L == 0.69
+                C = 25.48459179
+                
             L = self.L * 2
             g = self.g
-            C = 25.48459179
             self.Ac = np.array([[           0,            0, 0,  1,  0,  0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
                                 [           0,            0, 0,  0,  1,  0,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
                                 [           0,            0, 0,  0,  0,  1,           0,           0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -96,5 +102,5 @@ if __name__ == "__main__":
     Q = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0])
     R = 1.0 * np.diag([1, 1, 1, 1])
 
-    pos_tracker = ConstantPositionTracker("rs_og", 0.5, Q, R, np.zeros((3,1)), 0.02)
+    pos_tracker = ConstantPositionOmegaTracker("rs_og", 0.5, Q, R, np.zeros((3,1)), 0.02)
     K = pos_tracker.infinite_horizon_LQR()

@@ -5,13 +5,12 @@ based on the paper "A Flying Inverted Pendulum" by Raffaello D'Andrea and Markus
 This is for testing the nominal controller using theta and phi, the pitch and roll of pendulum,
 instead of using the r and s positions of the pendulum.
 """
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import os
 import math
 import datetime
 import time
-import IPython
 
 import rospy
 import numpy as np
@@ -30,17 +29,15 @@ from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeReq
 from geometry_msgs.msg import PoseStamped, Quaternion, Vector3, TwistStamped
 from std_msgs.msg import Header
 
-from src.controllers.eth_constant_controller import ConstantPositionTracker
-from src.controllers.eth_constant_torque_controller import ConstantPositionTorqueTracker
+from src.controllers.eth_constant_omega_controller import ConstantPositionOmegaTracker
 from src.callbacks.fcu_state_callbacks import VehicleStateCB
 from src.callbacks.pend_state_callbacks import PendulumCB
 from src.callbacks.fcu_modes import FcuModes
 
-class ETHTrackingTorqueNode:
+class ETHTrackingNode:
     def __init__(self, 
                  vehicle,
                  cont_type,
-                 ang_vel_type,
                  mode,
                  hz, 
                  track_type,
@@ -56,11 +53,6 @@ class ETHTrackingTorqueNode:
             self.pend_z_pose = 0.531659
             self.mass = 0.67634104 + 0.03133884
             self.L = 0.5
-            self.J = np.array([	# NOTE: danaus12_old
-                [0.00320868, 0.00011707,  0.00004899],
-                [0.00011707, 0.00288707,  0.00006456],
-                [0.00004899, 0.00006456,  0.00495141]])
-            self.J_inv = np.linalg.inv(self.J)
         elif self.vehicle == "danaus12_newold":
             self.pend_z_pose = 0.721659
             # self.pend_z_pose = 0.69
@@ -69,7 +61,6 @@ class ETHTrackingTorqueNode:
             self.mass = 0.70034104 + 0.046 #0.03133884
         
         self.cont_type = cont_type              # "rs" or "tp"
-        self.ang_vel_type = ang_vel_type        # "euler" or "body"
 
         self.mode = mode                        # "sim" or "real"
         self.hz = hz                            # Control Loop Frequency
@@ -80,14 +71,12 @@ class ETHTrackingTorqueNode:
         self.R = R                              # Input cost matrix
         self.dt = 1/self.hz                     # Time step
         self.lqr_itr = lqr_itr                  # Number of iterations for Infinite-Horizon LQR
-        self.prev_bodyrate = np.zeros((3,1))
-        self.accum_bodyrate = np.zeros((3,1))
 
         self.nx = 16
         self.nu = 4
 
         self.pend_upright_time = pend_upright_time  # Time to keep the pendulum upright
-        self.pend_upright_tol = pend_upright_tol    # Tolerance for pendulum relative position [r,s] (norm in meters)
+        self.pend_upright_tol = pend_upright_tol    # Tolerance for pendulum relative position [r,z] (norm in meters)
 
         ### Subscribers ###
         self.quad_cb = VehicleStateCB(mode=self.mode)
@@ -95,43 +84,34 @@ class ETHTrackingTorqueNode:
         ### Services ###
         self.quad_modes = FcuModes()
         ### Publishers ###
-        self.quad_pose_pub = rospy.Publisher("mavros/setpoint_position/local", PoseStamped, queue_size=10)
-        self.quad_att_setpoint_pub = rospy.Publisher("mavros/setpoint_raw/attitude", AttitudeTarget, queue_size=1)
+        self.quad_pose_pub = rospy.Publisher("mavros/setpoint_position/local", PoseStamped, queue_size=20)
+        self.quad_att_setpoint_pub = rospy.Publisher("mavros/setpoint_raw/attitude", AttitudeTarget, queue_size=20)
 
         # Time-checking
-        self.time_pub = rospy.Publisher("time_check", String, queue_size=10)
+        self.time_pub = rospy.Publisher("time_check", String, queue_size=20)
 
         self.hover_thrust = None
 
         ### Goal Position ###
-        takeoff_pose = np.array([0, 0, self.takeoff_height])
+        takeoff_pose = np.array([3, 3, self.takeoff_height])
 
         ### Takeoff Controller ###
-                                # γ, β, α, x, y, z, x_dot, y_dot, z_dot, pendulum (4)
-        Q_takeoff = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])      # Without pendulum
+                                # γ, β, α, γ_dot, β_dot, α_dot, pendulum (4), x, y, z, x_dot, y_dot, z_dot
+        Q_takeoff = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1])      # Without pendulum
         R_takeoff = 1.0 * np.diag([1, 10, 10, 10])
-        self.takeoff_cont = ConstantPositionTracker(cont_type, self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
+        self.takeoff_cont = ConstantPositionOmegaTracker(cont_type, self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
         self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
         self.takeoff_goal = self.takeoff_cont.xgoal
         self.takeoff_input = self.takeoff_cont.ugoal
 
         ### Tracking Controller ###
         if self.track_type == "constant":
-            ### Actual controller ###
-            self.cont = ConstantPositionTorqueTracker(cont_type, ang_vel_type, self.J, self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
+            self.cont = ConstantPositionOmegaTracker(cont_type, self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
             self.cont_K_inf = self.cont.infinite_horizon_LQR(self.lqr_itr)
             self.xgoal = self.cont.xgoal
             self.ugoal = self.cont.ugoal
-            ### ETH controller for comparison ###
-                                # γ, β, α, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-            Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])
-            R = 1.0 * np.diag([1, 7, 7, 7])
-            self.eth_cont = ConstantPositionTracker(cont_type, self.L, Q, R, np.array([0, 0, self.takeoff_height]), self.dt)
-            self.eth_K_inf = self.eth_cont.infinite_horizon_LQR(self.lqr_itr)
-            self.eth_xgoal = self.eth_cont.xgoal
-            self.eth_ugoal = self.eth_cont.ugoal
         else:
-            raise ValueError("Invalid tracking type. Circualr not implemented.")
+            raise ValueError("Invalid tracking type. Circular not implemented.")
         
         ### Takeoff Pose ###
         self.takeoff_pose = PoseStamped()
@@ -152,24 +132,25 @@ class ETHTrackingTorqueNode:
     def _init_node(self):
         rospy.init_node('eth_tracking_node', anonymous=True)
 
-    def _quad_takeoff_controller(self):
+    def _quad_lqr_controller(self):
         quad_xyz = self.quad_cb.get_xyz_pose()
         quad_xyz_vel = self.quad_cb.get_xyz_velocity()
         quad_xyz_ang = self.quad_cb.get_xyz_angles()
+        quad_xyz_ang_vel = self.quad_cb.get_xyz_angular_velocity()
         if self.cont_type == "rs":
+            # pend_pos = self.pend_cb.get_rs_pose(vehicle_pose=quad_xyz)
+            # pend_vel = self.pend_cb.get_rs_vel(vehicle_vel=quad_xyz_vel)
             pend_pos = np.zeros((2,))
             pend_vel = np.zeros((2,))
         elif self.cont_type == "tp":
+            # pend_pos = self.pend_cb.get_rs_ang(vehicle_pose=quad_zyx_ang)
+            # pend_vel = self.pend_cb.get_rs_ang_vel(vehicle_vel=quad_xyz_vel)
             pend_pos = np.zeros((2,))
             pend_vel = np.zeros((2,))
             
-        x = np.concatenate((quad_xyz_ang.T, quad_xyz.T, quad_xyz_vel.T, pend_pos.T, pend_vel.T))
-        x = x.reshape((13, 1))
-        u_takeoff = self.takeoff_input - self.takeoff_K_inf @ (x - self.takeoff_goal)
-        return u_takeoff
-
-    def _send_attitude_setpoint(self, u):
-        self.prev_bodyrate = u[1:]
+        x = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, pend_pos.T, pend_vel.T, quad_xyz.T, quad_xyz_vel.T))
+        x = x.reshape((self.nx, 1))
+        u = self.takeoff_input - self.takeoff_K_inf @ (x - self.takeoff_goal)  # 0 - K * dx = +ve
 
         self.att_setpoint.header.stamp = rospy.Time.now()
         self.att_setpoint.body_rate.x = u[1]
@@ -179,78 +160,12 @@ class ETHTrackingTorqueNode:
         self.att_setpoint.thrust = np.clip(self.att_setpoint.thrust, 0.0, 1.0)
         self.quad_att_setpoint_pub.publish(self.att_setpoint) 
 
-    def _quad_lqr_torque_input(self, x):
-        u_torque = self.ugoal - self.cont_K_inf @ (x - self.xgoal)
-        return u_torque
-    
-    def _eth_lqr_bodyrate_input(self, x):
-        x_eth = np.concatenate((x[0:3], x[6:]))
-        u_eth = self.eth_ugoal - self.eth_K_inf @ (x_eth - self.eth_xgoal)
-        return u_eth
-    
-    def _bodyrate_dynamics(self, u_torque, omega):
-        ### Convert torque to bodyrate ###
-        # IPython.embed()
-        omega_hat = np.array([[0, -omega[2], omega[1]],
-                              [omega[2], 0, -omega[0]],
-                              [-omega[1], omega[0], 0]])
-        omega = omega.reshape((3,1))
-        # IPython.embed()
-        omega_dot = self.J_inv @ (u_torque[1:] - omega_hat @ (self.J @ omega))
-        return omega_dot.squeeze()  # convert to (3,1) shape
- 
-    def _rk4(self, u_torque, omega):
-        k1 = self.dt * self._bodyrate_dynamics(u_torque, omega)
-        k2 = self.dt * self._bodyrate_dynamics(u_torque, omega + 0.5*k1)
-        k3 = self.dt * self._bodyrate_dynamics(u_torque, omega + 0.5*k2)
-        k4 = self.dt * self._bodyrate_dynamics(u_torque, omega + k3)
-        omega_next = omega + (k1 + 2*k2 + 2*k3 + k4) / 6
-        return omega_next
-
-    def _torque_to_bodyrate(self, u_torque, omega):
-        bodyrate = self._rk4(u_torque, omega)
-        # bodyrate = self._rk4(u_torque, self.prev_bodyrate.squeeze())
-        u_bodyrate = np.array([u_torque[0].item(), bodyrate[0], bodyrate[1], 0])
-        return u_bodyrate
-        
-        # omega_dot = self._bodyrate_dynamics(u_torque, omega)
-        ### Option 1 ###
-        # u_bodyrate[1:] = self.prev_bodyrate + self.dt * omega_dot
-        ### Option 2 ###
-        # u_bodyrate[1:] = self.dt * omega_dot
-        ### Option 3 ###
-        # u_bodyrate = self.prev_bodyrate + self.dt * omega_dot
-
-        # self.prev_bodyrate = u_bodyrate[1:]
-        # self.accum_bodyrate = self.accum_bodyrate * 0.9 + u_bodyrate[1:] * 0.1
-        # u_bodyrate = np.array([u_bodyrate[0], self.accum_bodyrate[0], self.accum_bodyrate[1], self.accum_bodyrate[2]])
-
-        # return u_bodyrate
-    
-    def _get_states(self):
-        quad_xyz = self.quad_cb.get_xyz_pose()
-        quad_xyz_vel = self.quad_cb.get_xyz_velocity()
-        quad_xyz_ang = self.quad_cb.get_xyz_angles()
-        quad_xyz_ang_vel = self.quad_cb.get_xyz_angular_velocity()   # TODO: Need to verify
-        omega = self.quad_cb.get_xyz_angular_velocity_body()
-
-        if self.cont_type == "tp":
-            pend_pos = self.pend_cb.get_rs_ang(vehicle_pose=quad_xyz)
-            pend_vel = self.pend_cb.get_rs_ang_vel(vehicle_vel=quad_xyz_vel)
-        else:
-            NotImplementedError(f"{self.cont_type} not implemented in NCBFTrackingNode")
-
-        # γ, β, α, γ_dot, β_dot, α_dot, x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-        x_16 = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, quad_xyz.T, quad_xyz_vel.T, pend_pos.T, pend_vel.T)) # Torque LQR expects (theta, phi).
-        x_16 = x_16.reshape((self.nx, 1))
-
-        return x_16, omega
-
     def _takeoff_sequence(self):
+        
         target_pose = np.array([self.takeoff_pose.pose.position.x, self.takeoff_pose.pose.position.y, self.takeoff_pose.pose.position.z])
 
         # Send initial commands
-        for _ in range(100):
+        for _ in range(1000):
             if rospy.is_shutdown():
                 break
             
@@ -305,21 +220,26 @@ class ETHTrackingTorqueNode:
         start_time = rospy.Time.now()
 
         while not rospy.is_shutdown():
-            ### Keep the quadrotor at this pose! ###
-            u_takeoff = self._quad_takeoff_controller()     # This is better than takeoff_pose
-            self._send_attitude_setpoint(u_takeoff)
+            # self._time_calls()
+
+            # # Keep the quadrotor at this pose!
+            # self.quad_pose_pub.publish(self.takeoff_pose)  
+            
+            # self._quad_lqr_controller()     # This is better than takeoff_pose
             
             link_state = LinkState()
             # link_state.pose.position.x = -0.001995
             # link_state.pose.position.y = 0.000135
-            link_state.pose.position.x = 0.001995
-            link_state.pose.position.y = -0.000135
+            # link_state.pose.position.x = 0.001995
+            # link_state.pose.position.y = -0.000135
+            link_state.pose.position.x = -0.001995
+            link_state.pose.position.y = 0.000135
             link_state.pose.position.z = self.pend_z_pose
             link_state.link_name = self.vehicle+'::pendulum'
             link_state.reference_frame = 'base_link'
             _ = self.set_link_state_service(link_state)
 
-            # Get the position of the pendulumu_bodyrate
+            # Get the position of the pendulum
             quad_xyz = self.quad_cb.get_xyz_pose()
             pendulum_position = self.pend_cb.get_rs_pose(vehicle_pose=quad_xyz)
 
@@ -333,7 +253,7 @@ class ETHTrackingTorqueNode:
                 if consecutive_time >= rospy.Duration(req_time):
                     rospy.loginfo("Pendulum position has been less than 0.05m for 0.5 seconds straight.")
                     
-                    ### Turn gravity on! ###
+                    # Turn gravity on!
                     curr_pend_properties = get_link_properties_service(link_name=self.vehicle+'::pendulum')
                     new_pend_properties = SetLinkPropertiesRequest(
                                             link_name=self.vehicle+'::pendulum',
@@ -348,8 +268,7 @@ class ETHTrackingTorqueNode:
                                             izz=curr_pend_properties.izz
                                         )
                     set_link_properties_service(new_pend_properties)
-                    u_takeoff = self._quad_takeoff_controller()
-                    self._send_attitude_setpoint(u_takeoff) 
+                    self._quad_lqr_controller() 
                     return True
                 self.rate.sleep()
             else:
@@ -371,9 +290,7 @@ class ETHTrackingTorqueNode:
         # Log Array
         num_itr = int(duration * self.hz)
         state_log = np.zeros((self.nx, num_itr))
-        eth_input_log = np.zeros((self.nu, num_itr))
-        bodyrate_input_log = np.zeros((self.nu, num_itr))
-        torque_input_log = np.zeros((self.nu, num_itr))
+        input_log = np.zeros((self.nu, num_itr))
         error_log = np.zeros((self.nx, num_itr))
 
         ##### Takeoff Sequence #####
@@ -395,22 +312,23 @@ class ETHTrackingTorqueNode:
         ##### Setting near origin & upright #####
         if self.mode == "sim":
             rospy.loginfo("Setting near origin & upright")
-            for _ in range(500):
+            for _ in range(1):
                 # self._time_calls()
 
                 link_state = LinkState()
-                # link_state.pose.position.x = -0.001995
-                # link_state.pose.position.y = 0.000135
+                #link_state.pose.position.x = -0.001995
+                #link_state.pose.position.y = 0.000135
                 link_state.pose.position.x = 0.001995
                 link_state.pose.position.y = -0.000135
+                #link_state.pose.position.x = 0 ## TODO THESE NEED TO CHANGE! Don't publish a global position, use the drone's position plus the relative distance in x,y,z
+                #link_state.pose.position.y = 0
                 link_state.pose.position.z = self.pend_z_pose
                 link_state.link_name = self.vehicle+'::pendulum'
                 link_state.reference_frame = 'base_link'
                 _ = self.set_link_state_service(link_state)
                 
                 # self.quad_pose_pub.publish(self.takeoff_pose)
-                u_takeoff = self._quad_takeoff_controller()     # This is better than takeoff_pose
-                self._send_attitude_setpoint(u_takeoff)
+                self._quad_lqr_controller()     # This is better than takeoff_pose
                 self.rate.sleep()
         else:
             pass
@@ -427,52 +345,55 @@ class ETHTrackingTorqueNode:
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
             
-            # if (itr % int(0.3*self.hz) == 0):
-            #     self.accum_bodyrate = np.zeros((3,1))
-
             # Quad XYZ
             quad_xyz = self.quad_cb.get_xyz_pose()
             # Quad XYZ Velocity
             quad_xyz_vel = self.quad_cb.get_xyz_velocity()
+            # Quad ZYX Angles
+            quad_xyz_ang = self.quad_cb.get_xyz_angles()
+            # Quad ZYX Angular Velocity
+            quad_xyz_ang_vel = self.quad_cb.get_xyz_angular_velocity()
             # Pendulum RS
             if self.cont_type == "rs":
                 pend_pos = self.pend_cb.get_rs_pose(vehicle_pose=quad_xyz)
                 pend_vel = self.pend_cb.get_rs_vel(vehicle_vel=quad_xyz_vel)
                 if np.linalg.norm(pend_pos) > 0.3:
-                    u_takeoff = self._quad_takeoff_controller()
-                    self._send_attitude_setpoint(u_takeoff)
+                    self._quad_lqr_controller()
                     rospy.loginfo_throttle(3,"Pendulum too far away. Exiting the control loop.")
-                    continue
+                    break
             elif self.cont_type == "tp":
                 pend_pos = self.pend_cb.get_rs_ang(vehicle_pose=quad_xyz)
                 pend_vel = self.pend_cb.get_rs_ang_vel(vehicle_vel=quad_xyz_vel)
                 if np.linalg.norm(pend_pos) > np.pi/3:
-                    u_takeoff = self._quad_takeoff_controller()
-                    self._send_attitude_setpoint(u_takeoff)
+                    self._quad_lqr_controller()
                     rospy.loginfo_throttle(3,"Pendulum too far away. Exiting the control loop.")
-                    continue
+                    break
 
             # State Vector
-            x, omega = self._get_states()
+            x = np.concatenate((quad_xyz_ang.T, quad_xyz_ang_vel.T, pend_pos.T, pend_vel.T, quad_xyz.T, quad_xyz_vel.T))
+            x = x.reshape((self.nx, 1))
 
             # Control Input
-            u_eth = self._eth_lqr_bodyrate_input(x)
-            u_torque = self._quad_lqr_torque_input(x)
-            u_bodyrate = self._torque_to_bodyrate(u_torque, omega)
-            self._send_attitude_setpoint(u_bodyrate)
-            # self._send_attitude_setpoint(u_eth)
+            u = self.ugoal - self.cont_K_inf @ (x - self.xgoal)  # 0 - K * dx = +ve
 
+            # Publish the attitude setpoint
+            self.att_setpoint.header.stamp = rospy.Time.now()
+            self.att_setpoint.body_rate.x = u[1]    # np.clip(u[0], -20, 20)
+            self.att_setpoint.body_rate.y = u[2]    # np.clip(u[1], -20, 20)
+            self.att_setpoint.body_rate.z = u[3]    # np.clip(u[2], -20, 20)
+            self.att_setpoint.thrust = (u[0]/(9.81)) * self.hover_thrust
+            self.att_setpoint.thrust = np.clip(self.att_setpoint.thrust, 0.0, 1.0)
+            self.quad_att_setpoint_pub.publish(self.att_setpoint) # Uncomment this line to publish the attitude setpoint
+            
             # Log the state and input
             state_log[:, itr] = x.flatten()
-            eth_input_log[:, itr] = u_eth.flatten()
-            bodyrate_input_log[:, itr] = u_bodyrate.flatten()
-            torque_input_log[:, itr] = u_torque.flatten()
+            input_log[:, itr] = u.flatten()
             error_log[:, itr] = (x - self.xgoal).flatten()
 
             self.rate.sleep()
 
         rospy.loginfo("Constant position control completed.")
-        return state_log, eth_input_log, bodyrate_input_log, torque_input_log, error_log
+        return state_log, input_log, error_log
 
 
 if __name__ == "__main__":
@@ -482,15 +403,13 @@ if __name__ == "__main__":
     parser.add_argument("--mode", type=str, default="sim", help="Mode of operation (sim or real)")
     parser.add_argument("--hz", type=int, default=90, help="Frequency of the control loop")
     parser.add_argument("--track_type", type=str, default="constant", help="Type of tracking to be used")
-    parser.add_argument("--takeoff_height", type=float, default=1.5, help="Height to takeoff to (in meters)")
+    parser.add_argument("--takeoff_height", type=float, default=2.0, help="Height to takeoff to (in meters)")
     parser.add_argument("--pend_upright_time", type=float, default=0.5, help="Time to keep the pendulum upright")
     parser.add_argument("--pend_upright_tol", type=float, default=0.05, help="Tolerance for pendulum relative position [r,z] (norm in meters)")
     parser.add_argument("--lqr_itr", type=int, default=100000, help="Number of iterations for Infinite-Horizon LQR")
     parser.add_argument("--cont_duration", type=int, default=20, help="Duration for which the controller should run (in seconds)")
     parser.add_argument("--vehicle", type=str)
     parser.add_argument("--cont_type", type=str, help="Either rs or tp")    # rs: r and s, tp: theta and phi
-    parser.add_argument("--ang_vel_type", type=str, default="euler", help="Type of angular velocity to be used (euler or body)")
-    parser.add_argument("--save", type=bool, default=True, help="Save the logs")
 
     args = parser.parse_args()
     mode = args.mode
@@ -503,9 +422,6 @@ if __name__ == "__main__":
     cont_duration = args.cont_duration
     vehicle = args.vehicle
     cont_type = args.cont_type
-    ang_vel_type = args.ang_vel_type
-    save = args.save
-    
 
     print("#####################################################")
     print("## ETH Tracking Node for Constant Position Started ##")
@@ -515,26 +431,23 @@ if __name__ == "__main__":
                         # x  y  z  x_dot y_dot z_dot yaw pitch roll r s r_dot s_dot
     # Q = 1.0 * np.diag([2, 2, 2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])      # With pendulum
     
-    if cont_type == "rs":
-        raise NotImplementedError("rs not implemented in ETHTrackingTorqueNode")
+    if cont_type == ".":
                            # γ, β, α, x, y, z, x_dot, y_dot, z_dot, r, s, r_dot, s_dot
         Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 2, 0.0, 0.0, 0.0, 2.0, 2.0, 0.4, 0.4])
         R = 1.0 * np.diag([1, 7, 7, 7])
     elif cont_type == "tp":
-                        # γ, β, α, γ_dot (wx), β_dot (wy), α_dot (wz), x, y, z, x_dot, y_dot, z_dot, θ, ϕ, θ_dot, ϕ_dot
-        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2, 2, 3, 1.0, 1.0, 1.0, 2.0, 2.0, 0.4, 0.4])    # Stable controller
-        # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 2, 2, 3, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])      # Unstable as hell
-        # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 8, 8, 8, 0.0, 0.0, 0.0, 1.0, 1.0, 0.4, 0.4])      
-        R = 1.0 * np.diag([1, 7, 7, 7])     # Stable controller
-        # R = 1.0 * np.diag([1, 1, 1, 1])
+                           # γ, β, α, γ_dot, β_dot, α_dot, ϕ, θ, ϕ_dot, θ_dot, x, y, z, x_dot, y_dot, z_dot
+        # Q = 1.0 * np.diag([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2, 2, 0.4, 0.4, 2, 2, 3, 1.0, 1.0, 1.0])    # Stable controller
+        Q = 1.0 * np.diag([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2, 2, 0.4, 0.4, 2, 2, 3, 10.0, 10.0, 1.0])    # Stable controller
+        R = 1.0 * np.diag([1, 7, 7, 7])
 
-    eth_node = ETHTrackingTorqueNode(vehicle, cont_type, ang_vel_type, mode, hz, track_type, Q, R, 
+    eth_node = ETHTrackingNode(vehicle, cont_type, mode, hz, track_type, Q, R, 
                                takeoff_height=takeoff_height, 
                                lqr_itr=lqr_itr, 
                                pend_upright_time=pend_upright_time, 
                                pend_upright_tol=pend_upright_tol)
     
-    state_log, eth_input_log, bodyrate_input_log, torque_input_log, error_log = eth_node.run(duration=cont_duration)
+    state_log, input_log, error_log = eth_node.run(duration=cont_duration)
 
     print("#####################################################")
     print("### ETH Tracking Node for Constant Position Over  ###")
@@ -545,41 +458,22 @@ if __name__ == "__main__":
     ######### Save the logs #########
     #################################
 
-    if save:
-        save_dir = "/home/kai/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/torque"
+    # curr_dir = os.getcwd()
+    save_dir = "/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs"
 
-        # Get current date and time
-        current_time = datetime.datetime.now()
-        # Format the date and time into the desired filename format
-        formatted_time = current_time.strftime("%m%d_%H%M%S-Torque-Sim")
-        directory_path = os.path.join(save_dir, formatted_time)
-        os.makedirs(directory_path, exist_ok=True)
+    # Get current date and time
+    current_time = datetime.datetime.now()
+    # Format the date and time into the desired filename format
+    formatted_time = current_time.strftime("%m%d_%H%M%S-Sim-Omega")
+    directory_path = os.path.join(save_dir, formatted_time)
+    os.makedirs(directory_path, exist_ok=True)
 
-        np.save(os.path.join(directory_path, "log.npy"),
-            {
-                "state_log": state_log,
-                "eth_input_log": eth_input_log,
-                "bodyrate_input_log": bodyrate_input_log,
-                "torque_input_log": torque_input_log,
-                "error_log": error_log
-            })
-        np.save(os.path.join(directory_path, "params.npy"), 
-            {
-                "mode": mode,
-                "hz": hz,
-                "track_type": track_type,
-                "takeoff_height": takeoff_height,
-                "pend_upright_time": pend_upright_time,
-                "pend_upright_tol": pend_upright_tol,
-                "lqr_itr": lqr_itr,
-                "cont_duration": cont_duration,
-                "vehicle": vehicle,
-                "cont_type": cont_type,
-                "Q": Q,
-                "R": R
-            })
+    np.save(os.path.join(directory_path, "state.npy"), state_log)
+    np.save(os.path.join(directory_path, "input.npy"), input_log)
+    np.save(os.path.join(directory_path, "error.npy"), error_log)
+    np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
 
-        print("#####################################################")
-        print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
-        print("#####################################################")
+    print("#############################################0, 0, 0, 0, 0, 3, 0, 0, 0########")
+    print(f"########### LOG DATA SAVED IN {formatted_time} ###########")
+    print("#####################################################")
 

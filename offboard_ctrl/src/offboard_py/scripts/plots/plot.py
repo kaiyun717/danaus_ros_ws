@@ -51,27 +51,28 @@ if __name__ == "__main__":
     # print(e_rs_norm) 
     
     # drop_idx = np.where(e_rs_norm > 0.3)
-    drop_idx = 5*50
+    # drop_idx = 5*50
+    drop_idx = -1
     
     # Extract variables from state_log
-    xyz = state_log[10:13, :drop_idx]
-    xyz_dot = state_log[13:16, :drop_idx]
-    euler_ang = state_log[0:3, :drop_idx]
-    euler_ang_vel = state_log[3:6, :drop_idx]
-    pend_rp = state_log[6:8, :drop_idx]
-    pend_rp_vel = state_log[8:10, :drop_idx]
+    xyz = state_log[0:3, :drop_idx]
+    xyz_dot = state_log[3:6, :drop_idx]
+    euler_ang = state_log[6:9, :drop_idx]
+    # euler_ang_vel = state_log[3:6, :drop_idx]
+    pend_rp = state_log[9:11, :drop_idx]
+    pend_rp_vel = state_log[11:13, :drop_idx]
 
     # Extract variables from error_log
-    e_xyz = error_log[10:13, :drop_idx]
-    e_xyz_dot = error_log[13:16, :drop_idx]
-    e_euler_ang = error_log[0:3, :drop_idx]
-    e_euler_ang_vel = error_log[3:6, :drop_idx]
-    e_pend_rp = error_log[6:8, :drop_idx]
-    e_pend_rp_vel = error_log[8:10, :drop_idx]
+    e_xyz = error_log[0:3, :drop_idx]
+    e_xyz_dot = error_log[3:6, :drop_idx]
+    e_euler_ang = error_log[6:9, :drop_idx]
+    # e_euler_ang_vel = error_log[3:6, :drop_idx]
+    e_pend_rp = error_log[9:11, :drop_idx]
+    e_pend_rp_vel = error_log[1:13, :drop_idx]
 
     # Extract variables from input_log
-    angular_velocities = input_log[1:4, :drop_idx]
-    acceleration = input_log[0, :drop_idx]
+    angular_velocities = input_log[0:3, :drop_idx]
+    acceleration = input_log[3, :drop_idx]
 
     #####################################
     ############ STATE PLOTS ############
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     plt.figure(figsize=(16, 12))
 
     # Plot [x, y, z] vs time
-    plt.subplot(3, 2, 1)
+    plt.subplot(1, 3, 1)
     plt.plot(time[: drop_idx], xyz[0, :], label='$x$')
     plt.plot(time[: drop_idx], xyz[1, :], label='$y$')
     plt.plot(time[: drop_idx], xyz[2, :], label='$z$')
@@ -91,7 +92,7 @@ if __name__ == "__main__":
     plt.legend()
 
     # Plot [x_dot, y_dot, z_dot] vs time
-    plt.subplot(3, 2, 2)
+    plt.subplot(1, 3, 2)
     plt.plot(time[:drop_idx], xyz_dot[0, :], label='$\dot x$')
     plt.plot(time[:drop_idx], xyz_dot[1, :], label='$\dot y$')
     plt.plot(time[:drop_idx], xyz_dot[2, :], label='$\dot z$')
@@ -101,42 +102,42 @@ if __name__ == "__main__":
     plt.legend()
 
     # Plot [α, β, γ] vs time
-    plt.subplot(3, 2, 3)
-    plt.plot(time[:drop_idx], euler_ang[2, :], label='$\\alpha$')
+    plt.subplot(1, 3, 3)
+    plt.plot(time[:drop_idx], euler_ang[0, :], label='$\\alpha$')
     plt.plot(time[:drop_idx], euler_ang[1, :], label='$\\beta$')
-    plt.plot(time[:drop_idx], euler_ang[0, :], label='$\gamma$')
+    plt.plot(time[:drop_idx], euler_ang[2, :], label='$\gamma$')
     plt.xlabel('Time')
     plt.ylabel('Orientation')
     plt.title('Quad Orient. vs Time')
     plt.legend()
 
-    # Plot [α_dot, β_dot, γ_dot] vs time
-    plt.subplot(3, 2, 4)
-    plt.plot(time[:drop_idx], euler_ang_vel[2, :], label='$\dot \\alpha$')
-    plt.plot(time[:drop_idx], euler_ang_vel[1, :], label='$\dot \\beta$')
-    plt.plot(time[:drop_idx], euler_ang_vel[0, :], label='$\dot \gamma$')
-    plt.xlabel('Time')
-    plt.ylabel('Orientation Rate')
-    plt.title('Quad Orient. Rate vs Time')
-    plt.legend()
+    # # Plot [α_dot, β_dot, γ_dot] vs time
+    # plt.subplot(3, 2, 4)
+    # plt.plot(time[:drop_idx], euler_ang_vel[2, :], label='$\dot \\alpha$')
+    # plt.plot(time[:drop_idx], euler_ang_vel[1, :], label='$\dot \\beta$')
+    # plt.plot(time[:drop_idx], euler_ang_vel[0, :], label='$\dot \gamma$')
+    # plt.xlabel('Time')
+    # plt.ylabel('Orientation Rate')
+    # plt.title('Quad Orient. Rate vs Time')
+    # plt.legend()
 
-    # Plot [r, s] vs time
-    plt.subplot(3, 2, 5)
-    plt.plot(time[:drop_idx], pend_rp[0, :], label='$\phi$')
-    plt.plot(time[:drop_idx], pend_rp[1, :], label='$\\theta$')
-    plt.xlabel('Time')
-    plt.ylabel('Position')
-    plt.title('Pole Pos. vs Time')
-    plt.legend()
+    # # Plot [r, s] vs time
+    # plt.subplot(3, 2, 5)
+    # plt.plot(time[:drop_idx], pend_rp[0, :], label='$\phi$')
+    # plt.plot(time[:drop_idx], pend_rp[1, :], label='$\\theta$')
+    # plt.xlabel('Time')
+    # plt.ylabel('Position')
+    # plt.title('Pole Pos. vs Time')
+    # plt.legend()
 
-    # Plot [r_dot, s_dot] vs time
-    plt.subplot(3, 2, 6)
-    plt.plot(time[:drop_idx], pend_rp_vel[0, :], label='$\dot \phi$')
-    plt.plot(time[:drop_idx], pend_rp_vel[1, :], label='$\dot \\theta$')
-    plt.xlabel('Time')
-    plt.ylabel('Velocities')
-    plt.title('Pole Vel. vs Time')
-    plt.legend()
+    # # Plot [r_dot, s_dot] vs time
+    # plt.subplot(3, 2, 6)
+    # plt.plot(time[:drop_idx], pend_rp_vel[0, :], label='$\dot \phi$')
+    # plt.plot(time[:drop_idx], pend_rp_vel[1, :], label='$\dot \\theta$')
+    # plt.xlabel('Time')
+    # plt.ylabel('Velocities')
+    # plt.title('Pole Vel. vs Time')
+    # plt.legend()
 
     # Adjust layout
     plt.tight_layout()

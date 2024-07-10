@@ -29,7 +29,7 @@ from mavros_msgs.srv import CommandBool, CommandBoolRequest, SetMode, SetModeReq
 from geometry_msgs.msg import PoseStamped, Quaternion, Vector3, TwistStamped
 from std_msgs.msg import Header
 
-from src.controllers.eth_constant_omega_controller import ConstantPositionTracker
+from src.controllers.eth_constant_omega_controller import ConstantPositionOmegaTracker
 from src.callbacks.fcu_state_callbacks import VehicleStateCB
 from src.callbacks.pend_state_callbacks import PendulumCB
 from src.callbacks.fcu_modes import FcuModes
@@ -99,14 +99,14 @@ class ETHTrackingNode:
                                 # γ, β, α, γ_dot, β_dot, α_dot, pendulum (4), x, y, z, x_dot, y_dot, z_dot
         Q_takeoff = 1.0 * np.diag([1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1])      # Without pendulum
         R_takeoff = 1.0 * np.diag([1, 10, 10, 10])
-        self.takeoff_cont = ConstantPositionTracker(cont_type, self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
+        self.takeoff_cont = ConstantPositionOmegaTracker(cont_type, self.L, Q_takeoff, R_takeoff, takeoff_pose, self.dt)
         self.takeoff_K_inf = self.takeoff_cont.infinite_horizon_LQR(self.lqr_itr)
         self.takeoff_goal = self.takeoff_cont.xgoal
         self.takeoff_input = self.takeoff_cont.ugoal
 
         ### Tracking Controller ###
         if self.track_type == "constant":
-            self.cont = ConstantPositionTracker(cont_type, self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
+            self.cont = ConstantPositionOmegaTracker(cont_type, self.L, self.Q, self.R, np.array([0, 0, self.takeoff_height]), self.dt)
             self.cont_K_inf = self.cont.infinite_horizon_LQR(self.lqr_itr)
             self.xgoal = self.cont.xgoal
             self.ugoal = self.cont.ugoal

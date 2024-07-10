@@ -36,7 +36,7 @@ class Danaus12TestNode:
                  hz, 
                  track_type,
                  mass,
-                 takeoff_height=0.5, 
+                 takeoff_height=1.5, 
                  lqr_itr=1000) -> None:
         
         self.mode = mode                        # "sim" or "real"
@@ -64,12 +64,12 @@ class Danaus12TestNode:
 
         ### Goal Position ###
         init_goal_pose = np.array([0, 0, self.takeoff_height])
-        self.goal_poses = np.array([[1, 1, 0.5],[2, 3, 1.5],[-1, 1, 1.0],[-3, -4, 1.5],[1, -1, 0.5],[0, 0, self.takeoff_height]])
+        self.goal_poses = np.array([[0, 0, 0.5],[1, 0, 0.5],[1, 1, 0.5],[0, 1, 0.5],[-1, -1, 0.5],[-1, 0, 0.5], [0,0,0.5]])
 
         ### LQR Controller ###
         Q_takeoff = 1.0 * np.diag([1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])      # Without pendulum
         R_takeoff = 1.0 * np.diag([10, 10, 10, 1])
-        self.lqr_cont = ConstantPositionTracker(1.0, Q_takeoff, R_takeoff, init_goal_pose, self.dt)
+        self.lqr_cont = ConstantPositionTracker(mode, "rs_og", 0.69, Q_takeoff, R_takeoff, init_goal_pose, self.dt)
         self.lqr_K_inf = self.lqr_cont.infinite_horizon_LQR(self.lqr_itr)
         self.lqr_goal = self.lqr_cont.xgoal
         self.lqr_input = self.lqr_cont.ugoal
@@ -110,6 +110,8 @@ class Danaus12TestNode:
             self.quad_att_setpoint_pub.publish(self.att_setpoint) 
         except:
             IPython.embed()
+            
+        return x, u
 
     def _takeoff_sequence(self):
         
@@ -159,9 +161,9 @@ class Danaus12TestNode:
         
         self.hover_thrust = self.quad_cb.thrust
 
-        if self.hover_thrust < 0.3:
-            rospy.loginfo("Hover thrust too low. Exiting the node.")
-            self.hover_thrust = 0.45
+        if self.hover_thrust > 0.35:
+            rospy.loginfo("Hover thrust too high. Exiting the node.")
+            self.hover_thrust = 0.3
 
         rospy.loginfo("Recorded hover thrust: {}".format(self.hover_thrust))
         rospy.loginfo("Takeoff achieved!")
@@ -188,13 +190,30 @@ class Danaus12TestNode:
                 rospy.loginfo_throttle(3, "Node shutdown detected. Exiting the control loop.")
                 break
             
-            if (itr%250 == 0):
-                goal_idx = (goal_idx+1)%len(self.goal_poses)
-                xyz_goal = self.goal_poses[goal_idx]
-                self.lqr_goal = np.hstack((xyz_goal,np.zeros((10)))).reshape(self.nx,1)
+            # if (itr%250 == 0):
+            #     goal_idx = (goal_idx+1)%len(self.goal_poses)
+            #     xyz_goal = self.goal_poses[goal_idx]
+            #     self.lqr_goal = np.hstack((xyz_goal,np.zeros((10)))).reshape(self.nx,1)
+                
             
-            self._quad_lqr_controller()
+            quad_xyz = self.quad_cb.get_xyz_pose()
+            if quad_xyz[-1] > 2.5:
+                self.att_setpoint.header.stamp = rospy.Time.now()
+                self.att_setpoint.body_rate.x = 0
+                self.att_setpoint.body_rate.y = 0
+                self.att_setpoint.body_rate.z = 0
+                self.att_setpoint.thrust = 0
+
+                self.quad_att_setpoint_pub.publish(self.att_setpoint) 
+                    
+            x, u = self._quad_lqr_controller()
+            
+            state_log[:, itr] = x.flatten()
+            input_log[:, itr] = u.flatten()
+            error_log[:, itr] = (x - self.lqr_goal).flatten()
+            
             self.rate.sleep()
+            
 
         rospy.loginfo("Constant position control completed.")
         return state_log, input_log, error_log
@@ -204,8 +223,8 @@ if __name__ == "__main__":
     
     ##### Argparse #####
     parser = argparse.ArgumentParser(description="ETH Tracking Node for Constant Position")
-    parser.add_argument("--mode", type=str, default="sim", help="Mode of operation (sim or real)")
-    parser.add_argument("--hz", type=int, default=90, help="Frequency of the control loop")
+    parser.add_argument("--mode", type=str, default="real", help="Mode of operation (sim or real)")
+    parser.add_argument("--hz", type=int, default=50, help="Frequency of the control loop")
     parser.add_argument("--track_type", type=str, default="constant", help="Type of tracking to be used")
     parser.add_argument("--mass", type=float, default=0.70, help="Mass of the quadrotor + pendulum (in kg)")
     # parser.add_argument("--mass", type=float, default=0.740, help="Mass of the quadrotor + pendulum (in kg)")
@@ -242,19 +261,19 @@ if __name__ == "__main__":
     #################################
 
     # curr_dir = os.getcwd()
-    save_dir = "/home/oem/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs"
+    save_dir = "/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs"
 
     # Get current date and time
     current_time = datetime.datetime.now()
     # Format the date and time into the desired filename format
-    formatted_time = current_time.strftime("%m%d_%H%M%S-Sim")
+    formatted_time = current_time.strftime("%m%d_%H%M%S-NewMotors")
     directory_path = os.path.join(save_dir, formatted_time)
     os.makedirs(directory_path, exist_ok=True)
 
     np.save(os.path.join(directory_path, "state.npy"), state_log)
     np.save(os.path.join(directory_path, "input.npy"), input_log)
     np.save(os.path.join(directory_path, "error.npy"), error_log)
-    np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
+    # np.save(os.path.join(directory_path, "gains.npy"), {"Q": Q, "R": R})
 
     print("#####################################################")
     print(f"########### LOG DATA SAVED IN {formatted_time} ###########")

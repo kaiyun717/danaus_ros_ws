@@ -17,7 +17,7 @@ def find_latest_folder(logs_dir):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process data files.')
-    parser.add_argument('--logs_dir', type=str, default='/home/dvij/ncbf-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs/eth_lqr',
+    parser.add_argument('--logs_dir', type=str, default='/home/cdundun/nCBF-drone/danaus_ros_ws/offboard_ctrl/src/offboard_py/logs',
                         help='Path to the directory containing log folders')
     parser.add_argument('--folder_name', type=str, default=None,
                         help='Name of the folder in which data is stored. If not provided, the script will use the latest folder.')
